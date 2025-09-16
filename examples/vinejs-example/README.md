@@ -119,5 +119,5 @@ The Swagger configuration is located in `config/swagger.ts` and includes:
 ## Learn More
 
 - [VineJS Documentation](https://vinejs.dev/)
-- [Open Swagger Documentation](https://github.com/DreamsHive/open-swagger)
+- [Adonis Open Swagger Documentation](https://github.com/devoresyah/adonis-open-swagger)
 - [AdonisJS Documentation](https://adonisjs.com/)

@@ -50,7 +50,7 @@ export default class OpenSwaggerProvider {
       const templatesPath = join(dirname(fileURLToPath(import.meta.url)), '../templates')
 
       if (edge && typeof edge.mount === 'function') {
-        edge.mount('open-swagger', templatesPath)
+        edge.mount('adonis-open-swagger', templatesPath)
       }
     } catch {
       // Silently fail if Edge templates cannot be mounted
@@ -94,7 +94,7 @@ export default class OpenSwaggerProvider {
 
             const templateData = service.getScalarTemplateData(specUrl)
 
-            const rendered = await view.render('open-swagger::scalar', templateData)
+            const rendered = await view.render('adonis-open-swagger::scalar', templateData)
 
             return rendered
           })

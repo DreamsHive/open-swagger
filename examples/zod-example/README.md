@@ -186,5 +186,5 @@ The Swagger configuration is located in `config/swagger.ts` and includes:
 ## Learn More
 
 - [Zod Documentation](https://zod.dev/)
-- [Open Swagger Documentation](https://github.com/DreamsHive/open-swagger)
+- [Adonis Open Swagger Documentation](https://github.com/devoresyah/adonis-open-swagger)
 - [AdonisJS Documentation](https://adonisjs.com/)

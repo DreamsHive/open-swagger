@@ -52,7 +52,7 @@
     "@adonisjs/core": "^6.18.0",
     "@vinejs/vine": "^3.0.1",
     "edge.js": "^6.3.0",
-    "open-swagger": "file:../..",
+    "adonis-open-swagger": "file:../..",
     "reflect-metadata": "^0.2.2"
   },
   "hotHook": {

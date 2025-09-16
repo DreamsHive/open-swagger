@@ -6,7 +6,7 @@ import {
   SwaggerRequestBody,
   SwaggerParam,
   SwaggerHeader,
-} from 'open-swagger'
+} from 'adonis-open-swagger'
 
 // TypeBox schemas for validation and documentation
 const ProductSchema = Type.Object({

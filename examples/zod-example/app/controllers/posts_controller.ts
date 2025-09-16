@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { z } from 'zod'
-import { SwaggerInfo, SwaggerResponse, SwaggerRequestBody, SwaggerParam } from 'open-swagger'
+import { SwaggerInfo, SwaggerResponse, SwaggerRequestBody, SwaggerParam } from 'adonis-open-swagger'
 
 // Zod schemas for validation and documentation
 const PostSchema = z.object({

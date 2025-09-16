@@ -2,9 +2,9 @@
 console.log('Starting import test...')
 
 try {
-  console.log('Importing open-swagger...')
-  const openSwagger = await import('open-swagger')
-  console.log('open-swagger imported successfully:', Object.keys(openSwagger))
+  console.log('Importing adonis-open-swagger...')
+  const openSwagger = await import('adonis-open-swagger')
+  console.log('adonis-open-swagger imported successfully:', Object.keys(openSwagger))
 
   // Test setting the global validator
   console.log('Setting global validator to typebox...')

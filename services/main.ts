@@ -40,7 +40,7 @@ async function registerRoutes(path: string = '/docs') {
 
       // Render using Edge template
       const templateData = service.getScalarTemplateData(specUrl)
-      return view.render('open-swagger::scalar', templateData)
+      return view.render('adonis-open-swagger::scalar', templateData)
     })
 
     // JSON endpoint

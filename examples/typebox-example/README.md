@@ -73,7 +73,7 @@ const CreateProductSchema = Type.Object({
 ### Enhanced Decorators
 
 ```typescript
-import { SwaggerInfo, SwaggerParam, SwaggerHeader, SwaggerResponse, SwaggerRequestBody } from 'open-swagger'
+import { SwaggerInfo, SwaggerParam, SwaggerHeader, SwaggerResponse, SwaggerRequestBody } from 'adonis-open-swagger'
 
 // Query and path parameters
 @SwaggerParam(
@@ -188,5 +188,5 @@ The Swagger configuration is located in `config/swagger.ts` and includes:
 ## Learn More
 
 - [TypeBox Documentation](https://github.com/sinclairzx81/typebox)
-- [Open Swagger Documentation](https://github.com/DreamsHive/open-swagger)
+- [Adonis Open Swagger Documentation](https://github.com/devoresyah/adonis-open-swagger)
 - [AdonisJS Documentation](https://adonisjs.com/)

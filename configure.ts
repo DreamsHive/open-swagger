@@ -12,7 +12,7 @@ export async function configure(command: Configure) {
 
   // Register the service provider
   await codemods.updateRcFile((rcFile) => {
-    rcFile.addProvider('open-swagger/providers/open_swagger_provider')
+    rcFile.addProvider('adonis-open-swagger/providers/open_swagger_provider')
   })
 
   // Create the configuration file
@@ -27,7 +27,7 @@ export async function configure(command: Configure) {
 
   // Add commands to adonisrc.ts
   await codemods.updateRcFile((rcFile: any) => {
-    rcFile.addCommand('open-swagger/commands')
+    rcFile.addCommand('adonis-open-swagger/commands')
   })
 
   // Display success message
@@ -38,5 +38,5 @@ export async function configure(command: Configure) {
   command.logger.info('2. Start your server and visit /docs to see your API documentation')
   command.logger.info('3. Use decorators or comments to add custom documentation')
   command.logger.info('')
-  command.logger.info('Documentation: https://github.com/open-swagger/open-swagger')
+  command.logger.info('Documentation: https://github.com/devoresyah/adonis-open-swagger')
 }

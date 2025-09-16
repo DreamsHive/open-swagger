@@ -1,4 +1,4 @@
-# Open Swagger
+# Adonis Open Swagger
 
 Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI.
 
@@ -16,7 +16,7 @@ Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI.
 
 ```bash
 # Core package (required)
-npm install open-swagger
+npm install adonis-open-swagger
 
 # Edge template engine (required for documentation UI)
 node ace add edge
@@ -41,7 +41,7 @@ npm install @vinejs/vine       # For VineJS schemas (recommended for AdonisJS)
 Configure the package in your AdonisJS application:
 
 ```bash
-node ace configure open-swagger
+node ace configure adonis-open-swagger
 ```
 
 This will:
@@ -62,7 +62,7 @@ After configuration, your API documentation will be available at `/docs` (config
 The package creates a `config/swagger.ts` file:
 
 ```typescript
-import { defineConfig } from 'open-swagger'
+import { defineConfig } from 'adonis-open-swagger'
 
 export default defineConfig({
   enabled: true,
@@ -93,7 +93,7 @@ import { HttpContext } from '@adonisjs/core/http'
 import { Type } from '@sinclair/typebox'
 import { z } from 'zod'
 import vine from '@vinejs/vine'
-import { SwaggerInfo, SwaggerResponse, SwaggerRequestBody, SwaggerParam } from 'open-swagger'
+import { SwaggerInfo, SwaggerResponse, SwaggerRequestBody, SwaggerParam } from 'adonis-open-swagger'
 
 // TypeBox schemas
 const UserSchema = Type.Object({

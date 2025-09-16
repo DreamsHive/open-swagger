@@ -1,4 +1,4 @@
-import { defineConfig } from 'open-swagger'
+import { defineConfig } from 'adonis-open-swagger'
 
 /**
  * Configuration for Open Swagger - TypeBox Example

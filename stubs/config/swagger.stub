@@ -1,7 +1,7 @@
 {{{
   exports({ to: app.configPath('swagger.ts') })
 }}}
-import { defineConfig } from 'open-swagger'
+import { defineConfig } from 'adonis-open-swagger'
 
 /**
  * Configuration for Open Swagger
@@ -16,6 +16,12 @@ export default defineConfig({
    * Path where the documentation will be served
    */
   path: '/docs',
+
+  /**
+   * Schema validator to use for automatic schema conversion
+   * Choose based on your preferred validation library
+   */
+  validator: 'vinejs', // 'vinejs' | 'zod' | 'typebox'
 
   /**
    * OpenAPI specification information

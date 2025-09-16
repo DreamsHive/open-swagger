@@ -1,5 +1,5 @@
 {
-  "name": "open-swagger",
+  "name": "adonis-open-swagger",
   "version": "1.0.0",
   "private": false,
   "description": "Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI",
@@ -68,7 +68,7 @@
     "api-documentation",
     "typescript"
   ],
-  "author": "DreamsHive <engineers@dreamshive.com>",
+  "author": "DreamsHive (<engineers@dreamshive.com>)",
   "license": "MIT",
   "repository": {
     "type": "git",

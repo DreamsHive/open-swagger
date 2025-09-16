@@ -87,7 +87,7 @@ import {
   SwaggerResponse,
   SwaggerRequestBody,
   SwaggerParam,
-} from 'open-swagger'
+} from 'adonis-open-swagger'
 
 @SwaggerInfo({
   tags: ['Users'],
@@ -164,7 +164,7 @@ Each example has its own `config/swagger.ts` file with:
 
 ## Learn More
 
-- [Open Swagger Documentation](https://github.com/DreamsHive/open-swagger)
+- [Adonis Open Swagger Documentation](https://github.com/devoresyah/adonis-open-swagger)
 - [VineJS Documentation](https://vinejs.dev/)
 - [TypeBox Documentation](https://github.com/sinclairzx81/typebox)
 - [Zod Documentation](https://zod.dev/)

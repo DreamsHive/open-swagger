@@ -28,19 +28,19 @@ export default class ValidateSpec extends BaseCommand {
     const { default: app } = await import('@adonisjs/core/services/app')
 
     try {
-      // Get the Open Swagger service
+      // Get the Adonis Open Swagger service
       let openSwagger: any
       try {
         openSwagger = await app.container.make('open.swagger')
       } catch {
         this.logger.error(
-          'Failed to resolve Open Swagger service. Make sure the provider is registered.'
+          'Failed to resolve Adonis Open Swagger service. Make sure the provider is registered.'
         )
         return
       }
 
       if (!openSwagger.isEnabled()) {
-        this.logger.warning('Open Swagger is disabled in configuration')
+        this.logger.warning('Adonis Open Swagger is disabled in configuration')
         return
       }
 

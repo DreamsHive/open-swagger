@@ -6,7 +6,7 @@ import {
   SwaggerRequestBody,
   SwaggerParam,
   SwaggerHeader,
-} from 'open-swagger'
+} from 'adonis-open-swagger'
 
 // Schemas
 import {
