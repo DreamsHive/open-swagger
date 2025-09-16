@@ -1,0 +1,146 @@
+{
+  "name": "open-swagger",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI",
+  "type": "module",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "files": [
+    "build/src",
+    "build/providers",
+    "build/services",
+    "build/stubs",
+    "build/commands",
+    "build/index.d.ts",
+    "build/index.js",
+    "build/configure.js",
+    "build/configure.d.ts",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js"
+    },
+    "./types": {
+      "types": "./build/src/types.d.ts",
+      "import": "./build/src/types.js"
+    },
+    "./commands": {
+      "types": "./build/commands/index.d.ts",
+      "import": "./build/commands/index.js"
+    },
+    "./configure": {
+      "types": "./build/configure.d.ts",
+      "import": "./build/configure.js"
+    },
+    "./services/main": {
+      "types": "./build/services/main.d.ts",
+      "import": "./build/services/main.js"
+    },
+    "./providers/open_swagger_provider": {
+      "types": "./build/providers/open_swagger_provider.d.ts",
+      "import": "./build/providers/open_swagger_provider.js"
+    }
+  },
+  "scripts": {
+    "clean": "del-cli build",
+    "copy:templates": "copyfiles \"stubs/**/*.stub\" \"templates/**/*.edge\" build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext=.ts",
+    "format": "prettier --write .",
+    "quick:test": "node --import=./tsnode.esm.js --enable-source-maps bin/test.ts",
+    "pretest": "npm run lint",
+    "test": "c8 npm run quick:test",
+    "prebuild": "npm run lint && npm run clean",
+    "build": "tsc && npm run copy:templates",
+    "release": "np",
+    "version": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "adonisjs",
+    "swagger",
+    "openapi",
+    "scalar",
+    "api-documentation",
+    "typescript"
+  ],
+  "author": "DreamsHive <engineers@dreamshive.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DreamsHive/open-swagger.git"
+  },
+  "homepage": "https://github.com/DreamsHive/open-swagger#readme",
+  "bugs": {
+    "url": "https://github.com/DreamsHive/open-swagger/issues"
+  },
+  "devDependencies": {
+    "@adonisjs/assembler": "^7.8.2",
+    "@adonisjs/core": "^6.14.1",
+    "@adonisjs/prettier-config": "^1.4.0",
+    "@adonisjs/tsconfig": "^1.4.1",
+    "@eslint/js": "^9.12.0",
+    "@japa/assert": "^3.0.0",
+    "@japa/file-system": "^2.3.0",
+    "@japa/runner": "^3.1.4",
+    "@swc/core": "^1.7.26",
+    "@types/node": "^22.7.5",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "c8": "^10.1.2",
+    "copyfiles": "^2.4.1",
+    "del-cli": "^6.0.0",
+    "eslint": "^9.12.0",
+    "np": "^10.0.7",
+    "prettier": "^3.3.3",
+    "ts-node-maintained": "^10.9.4",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "edge": "^6.3.0",
+    "@scalar/api-reference": "^1.25.62",
+    "yaml": "^2.5.1"
+  },
+  "optionalDependencies": {
+    "@sinclair/typebox": "^0.34.41",
+    "zod": "^4.1.8"
+  },
+  "peerDependencies": {
+    "@adonisjs/core": "^6.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@sinclair/typebox": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "np": {
+    "message": "chore(release): %s",
+    "tag": "latest",
+    "branch": "main",
+    "anyBranch": false
+  },
+  "c8": {
+    "reporter": [
+      "text",
+      "html"
+    ],
+    "exclude": [
+      "tests/**"
+    ]
+  },
+  "prettier": "@adonisjs/prettier-config",
+  "workspaces": [
+    "examples/*"
+  ]
+}

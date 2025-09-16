@@ -1,0 +1,408 @@
+Extracted routes: 12
+Filtered routes: 6
+Processing route: GET / -> Anonymous
+generateOperation called for: Anonymous
+Getting metadata for: Anonymous.undefined
+Invalid controller path or method name
+customMetadata result: null
+No custom metadata found for Anonymous
+No metadata found for route: GET /
+Processing route: HEAD / -> Anonymous
+generateOperation called for: Anonymous
+Getting metadata for: Anonymous.undefined
+Invalid controller path or method name
+customMetadata result: null
+No custom metadata found for Anonymous
+No metadata found for route: HEAD /
+Processing route: GET /api/v1/users -> #controllers/test_controller.index
+generateOperation called for: #controllers/test_controller.index
+Getting metadata for: #controllers/test_controller.index
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, index
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.index
+No metadata found for route: GET /api/v1/users
+Processing route: HEAD /api/v1/users -> #controllers/test_controller.index
+generateOperation called for: #controllers/test_controller.index
+Getting metadata for: #controllers/test_controller.index
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, index
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.index
+No metadata found for route: HEAD /api/v1/users
+Processing route: GET /api/v1/users/:id -> #controllers/test_controller.show
+generateOperation called for: #controllers/test_controller.show
+Getting metadata for: #controllers/test_controller.show
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, show
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.show
+No metadata found for route: GET /api/v1/users/{id}
+Processing route: HEAD /api/v1/users/:id -> #controllers/test_controller.show
+generateOperation called for: #controllers/test_controller.show
+Getting metadata for: #controllers/test_controller.show
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, show
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.show
+No metadata found for route: HEAD /api/v1/users/{id}
+Extracted routes: 12
+Filtered routes: 6
+Processing route: GET / -> Anonymous
+generateOperation called for: Anonymous
+Getting metadata for: Anonymous.undefined
+Invalid controller path or method name
+customMetadata result: null
+No custom metadata found for Anonymous
+No metadata found for route: GET /
+Processing route: HEAD / -> Anonymous
+generateOperation called for: Anonymous
+Getting metadata for: Anonymous.undefined
+Invalid controller path or method name
+customMetadata result: null
+No custom metadata found for Anonymous
+No metadata found for route: HEAD /
+Processing route: GET /api/v1/users -> #controllers/test_controller.index
+generateOperation called for: #controllers/test_controller.index
+Getting metadata for: #controllers/test_controller.index
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, index
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.index
+No metadata found for route: GET /api/v1/users
+Processing route: HEAD /api/v1/users -> #controllers/test_controller.index
+generateOperation called for: #controllers/test_controller.index
+Getting metadata for: #controllers/test_controller.index
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, index
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.index
+No metadata found for route: HEAD /api/v1/users
+Processing route: GET /api/v1/users/:id -> #controllers/test_controller.show
+generateOperation called for: #controllers/test_controller.show
+Getting metadata for: #controllers/test_controller.show
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, show
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.show
+No metadata found for route: GET /api/v1/users/{id}
+Processing route: HEAD /api/v1/users/:id -> #controllers/test_controller.show
+generateOperation called for: #controllers/test_controller.show
+Getting metadata for: #controllers/test_controller.show
+Trying application importer for: #controllers/test_controller
+Available app methods: []
+Trying container resolution for: #controllers/test_controller
+Container resolution failed: Cannot resolve binding "#controllers/test_controller" from the container
+Trying direct import for: #controllers/test_controller
+tryDirectImport called with: #controllers/test_controller, show
+Trying import paths: [
+  '#controllers/test_controller',
+  '#controllers/test_controller.js',
+  './app/controllers/test_controller.js',
+  './app/controllers/test_controller.ts',
+  '../app/controllers/test_controller.js',
+  '../app/controllers/test_controller.ts',
+  '../../app/controllers/test_controller.js',
+  '../../app/controllers/test_controller.ts',
+  '../../../app/controllers/test_controller.js',
+  '../../../app/controllers/test_controller.ts',
+  './examples/vinejs-example/app/controllers/test_controller.js',
+  './examples/vinejs-example/app/controllers/test_controller.ts',
+  '../examples/vinejs-example/app/controllers/test_controller.js',
+  '../examples/vinejs-example/app/controllers/test_controller.ts',
+  '../../examples/vinejs-example/app/controllers/test_controller.js',
+  '../../examples/vinejs-example/app/controllers/test_controller.ts'
+]
+Attempting import: #controllers/test_controller
+Attempting import: #controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.js
+Attempting import: ./app/controllers/test_controller.ts
+Attempting import: ../app/controllers/test_controller.js
+Attempting import: ../app/controllers/test_controller.ts
+Attempting import: ../../app/controllers/test_controller.js
+Attempting import: ../../app/controllers/test_controller.ts
+Attempting import: ../../../app/controllers/test_controller.js
+Attempting import: ../../../app/controllers/test_controller.ts
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ./examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../examples/vinejs-example/app/controllers/test_controller.ts
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.js
+Attempting import: ../../examples/vinejs-example/app/controllers/test_controller.ts
+Direct import result: null
+customMetadata result: null
+No custom metadata found for #controllers/test_controller.show
+No metadata found for route: HEAD /api/v1/users/{id}

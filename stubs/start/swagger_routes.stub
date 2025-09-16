@@ -1,0 +1,44 @@
+{{{
+  exports({ to: app.startPath('swagger_routes.ts') })
+}}}
+/**
+ * Example routes for Open Swagger documentation
+ * 
+ * This file demonstrates how to structure your routes for optimal
+ * OpenAPI documentation generation.
+ */
+
+import router from '@adonisjs/core/services/router'
+
+// Example API routes that will be documented
+router.group(() => {
+  // User management routes
+  router.get('/users', 'UsersController.index')
+  router.get('/users/:id', 'UsersController.show')
+  router.post('/users', 'UsersController.store')
+  router.put('/users/:id', 'UsersController.update')
+  router.delete('/users/:id', 'UsersController.destroy')
+
+  // Authentication routes
+  router.post('/auth/login', 'AuthController.login')
+  router.post('/auth/logout', 'AuthController.logout')
+  router.post('/auth/register', 'AuthController.register')
+}).prefix('/api/v1')
+
+/**
+ * You can enhance documentation by:
+ * 
+ * 1. Using descriptive route names:
+ *    router.get('/users', 'UsersController.index').as('users.index')
+ * 
+ * 2. Adding middleware for automatic security documentation:
+ *    router.get('/protected', 'Controller.method').middleware('auth')
+ * 
+ * 3. Using validators for automatic request/response documentation:
+ *    router.post('/users', 'UsersController.store').use(CreateUserValidator)
+ * 
+ * 4. Adding custom documentation with decorators (coming soon):
+ *    @swagger.summary('Get all users')
+ *    @swagger.description('Retrieve a paginated list of users')
+ *    @swagger.tag('Users')
+ */

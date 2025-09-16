@@ -1,0 +1,133 @@
+{{{
+  exports({ to: app.configPath('swagger.ts') })
+}}}
+import { defineConfig } from 'open-swagger'
+
+/**
+ * Configuration for Open Swagger
+ */
+export default defineConfig({
+  /**
+   * Enable or disable swagger documentation
+   */
+  enabled: true,
+
+  /**
+   * Path where the documentation will be served
+   */
+  path: '/docs',
+
+  /**
+   * OpenAPI specification information
+   */
+  info: {
+    title: '{{ title }}',
+    version: '{{ version }}',
+    description: '{{ description }}',
+    contact: {
+      name: 'API Support',
+      email: 'support@example.com',
+    },
+    license: {
+      name: 'MIT',
+      url: 'https://opensource.org/licenses/MIT',
+    },
+  },
+
+  /**
+   * Servers configuration
+   */
+  servers: [
+    {
+      url: 'http://localhost:3333',
+      description: 'Development server',
+    },
+  ],
+
+  /**
+   * Scalar UI configuration
+   */
+  scalar: {
+    /**
+     * Theme: 'auto' for system preference, or choose from Scalar themes:
+     * 'default', 'moon', 'purple', 'solarized', 'bluePlanet', 'saturn',
+     * 'kepler', 'mars', 'deepSpace', 'laserwave', 'elysiajs', 'none'
+     */
+    theme: 'auto',
+
+    /**
+     * Layout: 'modern' or 'classic'
+     */
+    layout: 'modern',
+
+    /**
+     * Show sidebar
+     */
+    showSidebar: true,
+
+    /**
+     * Custom CSS for additional styling
+     */
+    customCss: `
+      /* Add your custom styles here */
+    `,
+
+    /**
+     * Additional Scalar configuration
+     */
+    configuration: {
+      // Add any additional Scalar options here
+    },
+  },
+
+  /**
+   * Route scanning options
+   */
+  routes: {
+    /**
+     * Automatically scan for routes
+     */
+    autoScan: true,
+
+    /**
+     * Include routes matching these patterns
+     */
+    include: [
+      '/api/*',
+      // Add more patterns as needed
+    ],
+
+    /**
+     * Exclude routes matching these patterns
+     */
+    exclude: [
+      '/docs*',
+      '/health*',
+      // Add more patterns as needed
+    ],
+  },
+
+  /**
+   * Tags for grouping endpoints
+   */
+  tags: [
+    {
+      name: 'Authentication',
+      description: 'Authentication related endpoints',
+    },
+    {
+      name: 'Users',
+      description: 'User management endpoints',
+    },
+    // Add more tags as needed
+  ],
+
+  /**
+   * Custom OpenAPI specification to merge with auto-generated spec
+   * This allows you to add custom documentation that can't be auto-generated
+   */
+  customSpec: {
+    // Add custom OpenAPI specification here
+    // This will be merged with the auto-generated specification
+  },
+})
