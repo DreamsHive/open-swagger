@@ -360,6 +360,26 @@ node ace add edge
 - The **API**, **Slim**, and **Inertia** starter kits do not include Edge.js
 - Open Swagger uses Edge templates for rendering the documentation UI
 
+### TypeError: loaderInstance.getMetaData is not a function
+
+If you see this error during configuration:
+
+```
+TypeError: loaderInstance.getMetaData is not a function
+```
+
+**Solution**: This error is related to missing `reflect-metadata` package. The package now includes `reflect-metadata` as a dependency, but if you're still experiencing issues:
+
+```bash
+npm install reflect-metadata
+```
+
+**Why this happens**:
+
+- TypeScript decorators and metadata reflection require the `reflect-metadata` package
+- This is a common issue in TypeScript projects using decorators
+- The package now automatically includes and imports `reflect-metadata`
+
 ### Documentation not showing routes
 
 If your routes don't appear in the documentation:

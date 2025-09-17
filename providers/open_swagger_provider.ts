@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import type { ApplicationService } from '@adonisjs/core/types'
 import { OpenSwaggerService } from '../src/open_swagger_service.js'
 import type { OpenSwaggerConfig } from '../src/types.js'
@@ -41,16 +42,16 @@ export default class OpenSwaggerProvider {
   }
 
   /**
-   * Mount Edge templates using direct Edge import
+   * Mount Edge templates using AdonisJS Edge integration
    */
   private async mountEdgeTemplates() {
     try {
-      // Import Edge directly and mount templates
-      const { default: edge } = await import('edge.js')
+      // Get Edge instance from AdonisJS container
+      const edge = await this.app.container.make('edge')
       const templatesPath = join(dirname(fileURLToPath(import.meta.url)), '../templates')
 
-      if (edge && typeof edge.mount === 'function') {
-        edge.mount('adonis-open-swagger', templatesPath)
+      if (edge && typeof (edge as any).mount === 'function') {
+        ;(edge as any).mount('adonis-open-swagger', templatesPath)
       }
     } catch {
       // Silently fail if Edge templates cannot be mounted

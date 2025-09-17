@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import type { SwaggerMetadata, SchemaInput, SchemaValidator } from './types.js'
 import {
   convertToJsonSchema,

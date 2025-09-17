@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import { getDirname } from '@adonisjs/core/helpers'
 import type Configure from '@adonisjs/core/commands/configure'
 
