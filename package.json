@@ -1,6 +1,6 @@
 {
   "name": "adonis-open-swagger",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "description": "Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI",
   "type": "module",
