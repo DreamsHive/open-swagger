@@ -74,9 +74,7 @@ export default defineConfig({
     /**
      * Custom CSS for additional styling
      */
-    customCss: `
-      /* Add your custom styles here */
-    `,
+    customCss: '',
 
     /**
      * Additional Scalar configuration

@@ -16,7 +16,7 @@ Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI.
 
 ```bash
 # Core package (required)
-npm install adonis-open-swagger
+node ace add adonis-open-swagger
 
 # Edge template engine (required for documentation UI)
 node ace add edge
