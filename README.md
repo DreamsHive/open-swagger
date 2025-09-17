@@ -11,15 +11,14 @@ Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI.
 - 🛠️ **CLI Integration**: Seamless integration with AdonisJS Ace commands
 - 📦 **TypeScript**: Full TypeScript support with proper type definitions
 - ⚡ **Dynamic Loading**: Leverages AdonisJS v6's lazy loading for optimal performance
+- 🏗️ **Universal Compatibility**: Works with all AdonisJS starter kits (API, Slim, Web, Inertia)
+- 🔧 **Zero Dependencies**: No need to install Edge.js separately - included in the package
 
 ## Installation
 
 ```bash
-# Core package (required)
+# Core package (includes everything you need)
 node ace add adonis-open-swagger
-
-# Edge template engine (required for documentation UI)
-node ace add edge
 
 # Optional: Install schema libraries based on your preference
 npm install @sinclair/typebox  # For TypeBox schemas
@@ -29,8 +28,9 @@ npm install @vinejs/vine       # For VineJS schemas (recommended for AdonisJS)
 
 ### Requirements
 
-- **Edge.js**: Required for rendering the documentation UI. If you're using the **Web starter kit**, Edge is already included. For **API**, **Slim**, or **Inertia** starter kits, you'll need to install it manually.
-- **Schema libraries**: Optional dependencies based on your validation needs.
+- **No additional dependencies required**: The package includes Edge.js for template rendering
+- **Works with all AdonisJS starter kits**: API, Slim, Web, and Inertia
+- **Schema libraries**: Optional dependencies based on your validation needs
 
 > **Note**: TypeBox, Zod v4+, and VineJS are optional dependencies. The package will work with raw JSON Schema even if these libraries are not installed. Schema conversion will gracefully fallback if the libraries are missing.
 
@@ -340,45 +340,13 @@ See the `examples/` directory for complete examples:
 
 ## Troubleshooting
 
-### Edge view engine is required error
+### Template rendering issues
 
-If you see this error:
+The package uses Edge.js internally for template rendering. If you encounter any template-related issues:
 
-```
-Edge view engine is required for Open Swagger documentation. Please ensure Edge is properly configured in your AdonisJS application.
-```
-
-**Solution**: Install and configure Edge.js:
-
-```bash
-node ace add edge
-```
-
-**Why this happens**:
-
-- The **Web starter kit** includes Edge.js by default
-- The **API**, **Slim**, and **Inertia** starter kits do not include Edge.js
-- Open Swagger uses Edge templates for rendering the documentation UI
-
-### TypeError: loaderInstance.getMetaData is not a function
-
-If you see this error during configuration:
-
-```
-TypeError: loaderInstance.getMetaData is not a function
-```
-
-**Solution**: This error is related to missing `reflect-metadata` package. The package now includes `reflect-metadata` as a dependency, but if you're still experiencing issues:
-
-```bash
-npm install reflect-metadata
-```
-
-**Why this happens**:
-
-- TypeScript decorators and metadata reflection require the `reflect-metadata` package
-- This is a common issue in TypeScript projects using decorators
-- The package now automatically includes and imports `reflect-metadata`
+1. **No action required**: Edge.js is included as a dependency
+2. **Works everywhere**: Compatible with all AdonisJS starter kits
+3. **Self-contained**: No additional Edge installation needed
 
 ### Documentation not showing routes
 

@@ -37,21 +37,24 @@ export default class OpenSwaggerProvider {
    * The container bindings have booted
    */
   async boot() {
+    // Mount Edge templates first
+    await this.mountEdgeTemplates()
+
     // Register routes immediately in boot
     await this.registerRoutes()
   }
 
   /**
-   * Mount Edge templates using AdonisJS Edge integration
+   * Mount Edge templates using direct Edge.js import
    */
   private async mountEdgeTemplates() {
     try {
-      // Get Edge instance from AdonisJS container
-      const edge = await this.app.container.make('edge')
+      // Import Edge.js directly
+      const { default: edge } = await import('edge.js')
       const templatesPath = join(dirname(fileURLToPath(import.meta.url)), '../templates')
 
-      if (edge && typeof (edge as any).mount === 'function') {
-        ;(edge as any).mount('adonis-open-swagger', templatesPath)
+      if (edge && typeof edge.mount === 'function') {
+        edge.mount('adonis-open-swagger', templatesPath)
       }
     } catch {
       // Silently fail if Edge templates cannot be mounted
@@ -75,27 +78,18 @@ export default class OpenSwaggerProvider {
         // Register the documentation routes automatically
         router.group(() => {
           // Documentation UI endpoint
-          router.get(docsPath, async ({ response, view }: any) => {
+          router.get(docsPath, async ({ response }: any) => {
             const specUrl = `${docsPath}/json`
 
             response.header('Content-Type', 'text/html')
             response.header('Cache-Control', 'no-cache')
 
-            // Render using Edge template
-            if (!view || typeof view.render !== 'function') {
-              throw new Error(
-                'Edge view engine is required for Open Swagger documentation. ' +
-                  'Please install Edge.js with "npm install edge.js" and configure it in your AdonisJS application. ' +
-                  'See the troubleshooting section in the Open Swagger documentation for detailed setup instructions.'
-              )
-            }
-
-            // Mount templates before rendering
-            await this.mountEdgeTemplates()
-
+            // Render using Edge.js directly
             const templateData = service.getScalarTemplateData(specUrl)
 
-            const rendered = await view.render('adonis-open-swagger::scalar', templateData)
+            // Use Edge.js directly for rendering
+            const { default: edge } = await import('edge.js')
+            const rendered = await edge.render('adonis-open-swagger::scalar', templateData)
 
             return rendered
           })
