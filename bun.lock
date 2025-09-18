@@ -5,7 +5,8 @@
       "name": "open-swagger",
       "dependencies": {
         "@scalar/api-reference": "^1.25.62",
-        "edge": "^6.3.0",
+        "edge.js": "^6.0.2",
+        "reflect-metadata": "^0.2.2",
         "yaml": "^2.5.1",
       },
       "devDependencies": {
