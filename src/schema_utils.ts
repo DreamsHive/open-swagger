@@ -40,6 +40,62 @@ function cleanZodJsonSchema(schema: any): any {
 }
 
 /**
+ * Fix nullable fields in JSON Schema by removing them from required arrays
+ */
+function fixNullableFieldsInSchema(schema: any): any {
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
+  // Create a copy to avoid mutating the original
+  const fixed = { ...schema }
+
+  // Fix nullable fields in required array for object schemas
+  if (fixed.type === 'object' && fixed.properties && Array.isArray(fixed.required)) {
+    fixed.required = fixed.required.filter((fieldName: string) => {
+      const property = fixed.properties[fieldName]
+      if (!property) return true
+
+      // Check if field is nullable
+      if (property.nullable === true) {
+        return false // Remove from required if nullable
+      }
+
+      return true
+    })
+
+    // Remove required array if empty
+    if (fixed.required.length === 0) {
+      delete fixed.required
+    }
+  }
+
+  // Recursively fix nested objects
+  if (fixed.properties) {
+    fixed.properties = Object.fromEntries(
+      Object.entries(fixed.properties).map(([key, value]) => [
+        key,
+        fixNullableFieldsInSchema(value),
+      ])
+    )
+  }
+
+  // Fix array items
+  if (fixed.items) {
+    fixed.items = fixNullableFieldsInSchema(fixed.items)
+  }
+
+  // Fix anyOf/oneOf/allOf arrays
+  for (const key of ['anyOf', 'oneOf', 'allOf']) {
+    if (Array.isArray(fixed[key])) {
+      fixed[key] = fixed[key].map(fixNullableFieldsInSchema)
+    }
+  }
+
+  return fixed
+}
+
+/**
  * Convert Zod schema to JSON Schema using Zod v4's built-in conversion
  */
 async function zodToJsonSchema(zodSchema: any): Promise<any> {
@@ -51,8 +107,11 @@ async function zodToJsonSchema(zodSchema: any): Promise<any> {
         target: 'openapi-3.0', // Use OpenAPI format for cleaner schemas
       })
 
-      // Clean up the schema to remove complex regex patterns
-      return cleanZodJsonSchema(rawSchema)
+      // Clean up the schema to remove complex regex patterns and fix nullable handling
+      const cleanedSchema = cleanZodJsonSchema(rawSchema)
+
+      // Fix nullable fields in required array
+      return fixNullableFieldsInSchema(cleanedSchema)
     }
 
     // Fallback if toJSONSchema is not available (older Zod version)
@@ -74,11 +133,67 @@ async function zodToJsonSchema(zodSchema: any): Promise<any> {
 function typeBoxToJsonSchema(typeBoxSchema: any): any {
   try {
     // TypeBox schemas are already JSON Schema compatible
-    // Just return the schema object directly
-    return typeBoxSchema
+    // But we need to fix nullable field handling in required arrays
+    return fixTypeBoxNullableFields(typeBoxSchema)
   } catch {
     return { type: 'object', description: 'TypeBox schema (conversion failed)' }
   }
+}
+
+/**
+ * Fix TypeBox nullable fields by removing them from required arrays
+ */
+function fixTypeBoxNullableFields(schema: any): any {
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
+  // Create a copy to avoid mutating the original
+  const fixed = { ...schema }
+
+  // Fix nullable fields in required array for object schemas
+  if (fixed.type === 'object' && fixed.properties && Array.isArray(fixed.required)) {
+    fixed.required = fixed.required.filter((fieldName: string) => {
+      const property = fixed.properties[fieldName]
+      if (!property) return true
+
+      // Check if field is nullable using anyOf pattern with null type
+      if (property.anyOf && Array.isArray(property.anyOf)) {
+        const hasNullType = property.anyOf.some((item: any) => item.type === 'null')
+        if (hasNullType) {
+          return false // Remove from required if nullable
+        }
+      }
+
+      return true
+    })
+
+    // Remove required array if empty
+    if (fixed.required.length === 0) {
+      delete fixed.required
+    }
+  }
+
+  // Recursively fix nested objects
+  if (fixed.properties) {
+    fixed.properties = Object.fromEntries(
+      Object.entries(fixed.properties).map(([key, value]) => [key, fixTypeBoxNullableFields(value)])
+    )
+  }
+
+  // Fix array items
+  if (fixed.items) {
+    fixed.items = fixTypeBoxNullableFields(fixed.items)
+  }
+
+  // Fix anyOf/oneOf/allOf arrays
+  for (const key of ['anyOf', 'oneOf', 'allOf']) {
+    if (Array.isArray(fixed[key])) {
+      fixed[key] = fixed[key].map(fixTypeBoxNullableFields)
+    }
+  }
+
+  return fixed
 }
 
 /**
@@ -152,8 +267,9 @@ function convertVineJSToJsonSchema(vineOutput: any): any {
       const propertySchema = convertVineJSProperty(prop, refs)
       jsonSchema.properties[fieldName] = propertySchema
 
-      // Add to required if not optional
-      if (!prop.isOptional) {
+      // Add to required if not optional AND not nullable
+      // In VineJS, nullable fields should not be required even if isOptional is false
+      if (!prop.isOptional && !prop.allowNull) {
         required.push(fieldName)
       }
     }
@@ -180,6 +296,12 @@ function convertVineJSProperty(prop: any, refs: any): any {
   if (prop.type === 'array' && prop.each) {
     jsonProperty.type = 'array'
     jsonProperty.items = convertVineJSProperty(prop.each, refs)
+
+    // Handle nullable arrays
+    if (prop.allowNull) {
+      jsonProperty.nullable = true
+    }
+
     return jsonProperty
   }
 
@@ -204,7 +326,9 @@ function convertVineJSProperty(prop: any, refs: any): any {
 
       jsonProperty.properties[fieldName] = convertVineJSProperty(nestedProp, refs)
 
-      if (!nestedProp.isOptional) {
+      // Add to required if not optional AND not nullable
+      // In VineJS, nullable fields should not be required even if isOptional is false
+      if (!nestedProp.isOptional && !nestedProp.allowNull) {
         required.push(fieldName)
       }
     }
@@ -214,6 +338,12 @@ function convertVineJSProperty(prop: any, refs: any): any {
     }
 
     jsonProperty.additionalProperties = false // FORCE to false to prevent Scalar from generating extra properties
+
+    // Handle nullable object types
+    if (prop.allowNull) {
+      jsonProperty.nullable = true
+    }
+
     return jsonProperty
   }
 
@@ -234,6 +364,11 @@ function convertVineJSProperty(prop: any, refs: any): any {
       break
     default:
       jsonProperty.type = 'string' // fallback
+  }
+
+  // Handle nullable fields by adding nullable: true for OpenAPI 3.0 compatibility
+  if (prop.allowNull) {
+    jsonProperty.nullable = true
   }
 
   // Process validations to extract constraints
