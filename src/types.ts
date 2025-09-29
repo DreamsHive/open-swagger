@@ -171,6 +171,16 @@ export interface RouteInfo {
   middleware: string[]
   name?: string
   domain?: string
+  /**
+   * Import function for lazy-loaded controllers (array handler format)
+   * Used when route handler is [() => import('#controllers/...'), 'methodName']
+   */
+  importFunction?: () => Promise<any>
+  /**
+   * Method name for array handler format
+   * Used when route handler is [() => import('#controllers/...'), 'methodName']
+   */
+  methodName?: string
 }
 
 /**

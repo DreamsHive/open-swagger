@@ -451,6 +451,85 @@ scalar: {
 - **`'elysiajs'`** - ElysiaJS-inspired theme
 - **`'none'`** - No theme (for custom styling)
 
+### Route Handler Formats
+
+Open Swagger supports both traditional string-based route handlers and the modern array-based import format recommended in AdonisJS v6:
+
+#### Array Handler Format (Recommended)
+
+```typescript
+// start/routes.ts
+import router from '@adonisjs/core/services/router'
+
+// Define import functions
+const AuthController = () => import('#controllers/auth_controller')
+const UsersController = () => import('#controllers/users_controller')
+
+// Use array format: [ImportFunction, 'methodName']
+router
+  .group(() => {
+    router.post('login', [AuthController, 'login']).as('login')
+    router.post('logout', [AuthController, 'logout']).as('logout')
+    router.post('register', [AuthController, 'register']).as('register')
+  })
+  .as('auth')
+  .prefix('api/auth')
+
+router
+  .group(() => {
+    router.get('users', [UsersController, 'index'])
+    router.get('users/:id', [UsersController, 'show'])
+    router.post('users', [UsersController, 'store'])
+    router.put('users/:id', [UsersController, 'update'])
+    router.delete('users/:id', [UsersController, 'destroy'])
+  })
+  .prefix('api/v1')
+```
+
+#### String Handler Format
+
+```typescript
+// start/routes.ts
+import router from '@adonisjs/core/services/router'
+
+// Use string format: '#controllers/controller_name.methodName'
+router
+  .group(() => {
+    router.post('login', '#controllers/auth_controller.login')
+    router.post('logout', '#controllers/auth_controller.logout')
+    router.post('register', '#controllers/auth_controller.register')
+  })
+  .prefix('api/auth')
+```
+
+#### Mixed Usage
+
+You can use both formats in the same application:
+
+```typescript
+// start/routes.ts
+import router from '@adonisjs/core/services/router'
+
+const UsersController = () => import('#controllers/users_controller')
+
+router
+  .group(() => {
+    // Array handler (recommended)
+    router.get('profile', [UsersController, 'profile'])
+
+    // String handler (alternative format)
+    router.get('settings', '#controllers/users_controller.settings')
+  })
+  .prefix('api/user')
+```
+
+**Benefits of Array Handler Format:**
+
+- ✅ Better TypeScript support and IntelliSense
+- ✅ Lazy loading of controllers (better performance)
+- ✅ Explicit import dependencies
+- ✅ Recommended by AdonisJS v6 documentation
+
 ### Route Filtering
 
 ```typescript

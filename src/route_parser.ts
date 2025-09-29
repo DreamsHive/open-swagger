@@ -80,13 +80,16 @@ export class RouteParser {
               const methods = Array.isArray(route.methods) ? route.methods : [route.method || 'GET']
 
               for (const method of methods) {
+                const handlerInfo = this.extractHandlerInfo(route)
                 routes.push({
                   method: method.toUpperCase(),
                   pattern: route.pattern || route.route,
-                  handler: this.extractHandler(route),
+                  handler: handlerInfo.handler,
                   middleware: this.extractMiddleware(route),
                   name: route.name,
                   domain: route.domain,
+                  importFunction: handlerInfo.importFunction,
+                  methodName: handlerInfo.methodName,
                 })
               }
             }
@@ -97,13 +100,16 @@ export class RouteParser {
               const methods = Array.isArray(route.methods) ? route.methods : [route.method || 'GET']
 
               for (const method of methods) {
+                const handlerInfo = this.extractHandlerInfo(route)
                 routes.push({
                   method: method.toUpperCase(),
                   pattern: route.pattern || route.route,
-                  handler: this.extractHandler(route),
+                  handler: handlerInfo.handler,
                   middleware: this.extractMiddleware(route),
                   name: route.name,
                   domain: route.domain,
+                  importFunction: handlerInfo.importFunction,
+                  methodName: handlerInfo.methodName,
                 })
               }
             }
@@ -143,6 +149,14 @@ export class RouteParser {
         return route.handler
       }
 
+      // Handle array handlers like [() => import('#controllers/auth_controller'), 'login']
+      if (Array.isArray(route.handler) && route.handler.length === 2) {
+        const [importFn, methodName] = route.handler
+        if (typeof importFn === 'function' && typeof methodName === 'string') {
+          return `Array[${importFn.name || 'ImportFunction'}, ${methodName}]`
+        }
+      }
+
       // Handle object handlers with lazy loading
       if (typeof route.handler === 'object' && route.handler.reference) {
         return route.handler.reference
@@ -159,6 +173,34 @@ export class RouteParser {
       return typeof route.action === 'string' ? route.action : route.action.name || 'Unknown'
     }
     return 'Unknown'
+  }
+
+  /**
+   * Extract complete handler information including import function and method name
+   */
+  private extractHandlerInfo(route: any): {
+    handler: string
+    importFunction?: () => Promise<any>
+    methodName?: string
+  } {
+    if (route.handler) {
+      // Handle array handlers like [() => import('#controllers/auth_controller'), 'login']
+      if (Array.isArray(route.handler) && route.handler.length === 2) {
+        const [importFn, methodName] = route.handler
+        if (typeof importFn === 'function' && typeof methodName === 'string') {
+          return {
+            handler: `Array[${importFn.name || 'ImportFunction'}, ${methodName}]`,
+            importFunction: importFn,
+            methodName: methodName,
+          }
+        }
+      }
+    }
+
+    // For all other handler types, use the existing extractHandler method
+    return {
+      handler: this.extractHandler(route),
+    }
   }
 
   /**
@@ -272,7 +314,33 @@ export class RouteParser {
    */
   private async getCustomMetadata(route: RouteInfo): Promise<any> {
     try {
-      // Parse handler to get controller and method
+      // Handle array handlers with import functions first
+      if (route.importFunction && route.methodName) {
+        try {
+          // Execute the import function to get the controller module
+          const controllerModule = await route.importFunction()
+
+          // Extract the controller class from the module
+          const ControllerClass = controllerModule.default || controllerModule
+
+          if (ControllerClass && ControllerClass.prototype) {
+            const metadata = getSwaggerMetadata(ControllerClass.prototype, route.methodName)
+            if (metadata) {
+              return await this.resolveMetadataPromises(metadata)
+            }
+          }
+
+          // If no metadata found but controller exists, return null (not an error)
+          return null
+        } catch (error: any) {
+          // Log import function errors but continue with fallback
+          // eslint-disable-next-line no-console
+          console.warn(`Error executing import function for route ${route.pattern}:`, error.message)
+          return null
+        }
+      }
+
+      // Parse handler to get controller and method (for string handlers)
       const [controllerPath, methodName] = route.handler.split('.')
 
       if (!controllerPath || !methodName) {
