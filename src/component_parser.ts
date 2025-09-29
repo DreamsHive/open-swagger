@@ -204,11 +204,13 @@ export class ComponentParser {
         // Handle wildcard patterns like "#schemas/*" -> "./app/schemas/*.js"
         if (alias.endsWith('/*') && aliasPath.startsWith(alias.slice(0, -2))) {
           const aliasBase = alias.slice(0, -2) // Remove /*
-          const targetBase = target.slice(0, -2) // Remove /*
+          // Find the position of * in target and get everything before it
+          const starIndex = target.indexOf('*')
+          const targetBase = starIndex !== -1 ? target.slice(0, starIndex) : target
           const remainingPath = aliasPath.slice(aliasBase.length + 1) // Remove alias base and /
 
-          // Replace * with the remaining path
-          const resolvedTarget = targetBase.replace(/\*$/, remainingPath)
+          // Combine target base with remaining path
+          const resolvedTarget = targetBase + remainingPath
 
           // If target has .js extension but we're looking for .ts files, try .ts first
           if (resolvedTarget.endsWith('.js')) {

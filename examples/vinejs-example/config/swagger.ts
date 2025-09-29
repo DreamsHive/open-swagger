@@ -120,11 +120,7 @@ export default defineConfig({
      * Include schemas from multiple sources
      * This will automatically convert VineJS schemas to OpenAPI component schemas
      */
-    include: [
-      'app/schemas/index.ts',
-      'app/schemas/product.schema.ts',
-      'app/models', // Directory scanning
-    ],
+    include: ['#schemas/index.schema.js'],
   },
 
   /**
