@@ -1,6 +1,7 @@
 import type { ApplicationService } from '@adonisjs/core/types'
 import type { OpenSwaggerConfig, OpenAPISpec } from './types.js'
 import { RouteParser } from './route_parser.js'
+import { ComponentParser } from './component_parser.js'
 import { setGlobalValidator } from './decorators.js'
 
 /**
@@ -8,6 +9,7 @@ import { setGlobalValidator } from './decorators.js'
  */
 export class OpenSwaggerService {
   private routeParser: RouteParser
+  private componentParser: ComponentParser | null = null
 
   constructor(
     private config: OpenSwaggerConfig,
@@ -15,6 +17,11 @@ export class OpenSwaggerService {
     private app: ApplicationService
   ) {
     this.routeParser = new RouteParser(config, app)
+
+    // Initialize component parser if components are configured
+    if (this.config.components) {
+      this.componentParser = new ComponentParser(this.config.components, this.config.validator, app)
+    }
 
     // Set the global validator configuration
     setGlobalValidator(config.validator)
@@ -65,6 +72,26 @@ export class OpenSwaggerService {
     // Add tags if configured
     if (this.config.tags) {
       spec.tags = this.config.tags
+    }
+
+    // Add component schemas if configured
+    if (this.componentParser) {
+      try {
+        const componentSchemas = await this.componentParser.parseComponents()
+        if (Object.keys(componentSchemas).length > 0) {
+          spec.components = {
+            ...spec.components,
+            schemas: {
+              ...spec.components?.schemas,
+              ...componentSchemas,
+            },
+          }
+        }
+      } catch (error: any) {
+        // eslint-disable-next-line no-console
+        console.warn('Error generating component schemas:', error.message)
+        // Continue without component schemas if parsing fails
+      }
     }
 
     // Auto-generate from routes if enabled

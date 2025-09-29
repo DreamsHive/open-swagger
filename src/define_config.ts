@@ -31,5 +31,10 @@ export function defineConfig(config: OpenSwaggerConfig): OpenSwaggerConfig {
       ...defaultConfig.routes,
       ...config.routes,
     },
+    components: config.components
+      ? {
+          ...config.components,
+        }
+      : undefined,
   }
 }

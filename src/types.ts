@@ -4,6 +4,23 @@
 export type SchemaValidator = 'typebox' | 'zod' | 'vinejs'
 
 /**
+ * Components configuration for generating OpenAPI component schemas
+ */
+export interface ComponentsConfig {
+  /**
+   * Array of directory paths or file paths to include schemas for the components schema
+   * Can include multiple files like ["/schemas/index.ts", "/models/*.ts"] or directory patterns
+   */
+  include: string[]
+
+  /**
+   * Exclude patterns for schema files (optional)
+   * Array of glob patterns to exclude specific files
+   */
+  exclude?: string[]
+}
+
+/**
  * Configuration options for Open Swagger
  */
 export interface OpenSwaggerConfig {
@@ -22,6 +39,12 @@ export interface OpenSwaggerConfig {
    * This eliminates auto-detection issues and improves performance
    */
   validator?: SchemaValidator
+
+  /**
+   * Components configuration for generating OpenAPI component schemas
+   * This allows openapi-typescript to generate proper TypeScript types
+   */
+  components?: ComponentsConfig
 
   /**
    * OpenAPI specification information
