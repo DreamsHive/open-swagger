@@ -127,6 +127,27 @@ export default defineConfig({
   ],
 
   /**
+   * Components configuration for generating OpenAPI component schemas
+   * This allows openapi-typescript to generate proper TypeScript types
+   */
+  components: {
+    /**
+     * Array of directory paths or file paths to include schemas for the components schema
+     * Examples:
+     * - ["/schemas/index.ts"] - single file
+     * - ["/app/schemas", "/app/models"] - multiple directories
+     * - ["/schemas/*.ts", "/models/user.ts"] - patterns and specific files
+     */
+    include: [],
+
+    /**
+     * Exclude patterns for schema files (optional)
+     * Array of glob patterns to exclude specific files
+     */
+    exclude: [],
+  },
+
+  /**
    * Custom OpenAPI specification to merge with auto-generated spec
    * This allows you to add custom documentation that can't be auto-generated
    */

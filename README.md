@@ -7,6 +7,7 @@ Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI.
 - 🚀 **Modern UI**: Uses Scalar instead of traditional Swagger UI
 - 🎯 **Decorator-driven**: Documentation only generated for routes with explicit decorators
 - 🔧 **Schema Support**: Native TypeBox, Zod, and VineJS schema support alongside raw JSON Schema
+- 🧩 **Components Feature**: Automatic OpenAPI component schema generation for `openapi-typescript` integration
 - 🎨 **Customizable**: Flexible configuration and theming options
 - 🛠️ **CLI Integration**: Seamless integration with AdonisJS Ace commands
 - 📦 **TypeScript**: Full TypeScript support with proper type definitions
@@ -24,6 +25,9 @@ node ace add adonis-open-swagger
 npm install @sinclair/typebox  # For TypeBox schemas
 npm install zod                # For Zod schemas
 npm install @vinejs/vine       # For VineJS schemas (recommended for AdonisJS)
+
+# Optional: For TypeScript type generation from OpenAPI components
+npm install -D openapi-typescript  # Generates TypeScript types from OpenAPI specs
 ```
 
 ### Requirements
@@ -81,8 +85,154 @@ export default defineConfig({
     include: ['/api/*'],
     exclude: ['/docs*', '/health*'],
   },
+  components: {
+    include: ['app/schemas'], // Optional: for openapi-typescript integration
+  },
 })
 ```
+
+### Components Feature (NEW) 🎉
+
+The Components feature automatically generates OpenAPI component schemas from your validation schema files, enabling proper TypeScript type generation with `openapi-typescript` instead of `schemas: never`.
+
+#### Configuration
+
+Add a `components` section to your `config/swagger.ts`:
+
+```typescript
+export default defineConfig({
+  // ... other configuration
+
+  components: {
+    /**
+     * Array of file paths or directory paths to include schemas
+     * Supports multiple files, directories, and patterns
+     */
+    include: [
+      'app/schemas/index.ts', // Single file
+      'app/schemas/product.schema.ts', // Another file
+      'app/models', // Entire directory (recursive)
+      'app/validators/*.ts', // Pattern matching
+    ],
+
+    /**
+     * Optional: Exclude patterns for schema files
+     * Array of glob patterns to exclude specific files
+     */
+    exclude: ['**/*.test.ts', '**/*.spec.ts'],
+  },
+})
+```
+
+#### Schema File Structure
+
+Create schema files using VineJS, Zod, or TypeBox:
+
+```typescript
+// app/schemas/user.schema.ts
+import vine from '@vinejs/vine'
+
+export const userSchema = vine.object({
+  id: vine.string(),
+  name: vine.string(),
+  email: vine.string().email(),
+  age: vine.number().optional(),
+  createdAt: vine.string(),
+  updatedAt: vine.string(),
+})
+
+export const createUserSchema = vine.object({
+  name: vine.string().minLength(2),
+  email: vine.string().email(),
+  age: vine.number().optional(),
+})
+```
+
+```typescript
+// app/schemas/product.schema.ts
+import { z } from 'zod'
+
+export const productSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number().positive(),
+  inStock: z.boolean(),
+  tags: z.array(z.string()),
+})
+```
+
+```typescript
+// app/models/order.schema.ts
+import { Type } from '@sinclair/typebox'
+
+export const orderSchema = Type.Object({
+  id: Type.String(),
+  userId: Type.String(),
+  total: Type.Number({ minimum: 0 }),
+  status: Type.Union([Type.Literal('pending'), Type.Literal('confirmed'), Type.Literal('shipped')]),
+})
+```
+
+#### Generated TypeScript Types
+
+After configuring components, generate TypeScript types:
+
+```bash
+# Start your AdonisJS server
+npm run dev
+
+# Generate TypeScript types from OpenAPI spec
+npx openapi-typescript http://localhost:3333/docs/json -o ./types/api-schema.ts
+```
+
+Now you can use fully-typed API components in your frontend:
+
+```typescript
+// Frontend usage
+import { components } from './types/api-schema'
+
+// Extract component types - fully typed!
+type User = components['schemas']['userSchema']
+type CreateUser = components['schemas']['createUserSchema']
+type Product = components['schemas']['productSchema']
+type Order = components['schemas']['orderSchema']
+
+// Use in your application with full type safety
+export class ApiClient {
+  async createUser(data: CreateUser): Promise<User> {
+    // TypeScript ensures correct data structure
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  }
+
+  async getUser(id: string): Promise<User> {
+    const response = await fetch(`/api/users/${id}`)
+    return response.json()
+  }
+
+  async createProduct(data: Omit<Product, 'id'>): Promise<Product> {
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    return response.json()
+  }
+}
+```
+
+#### Benefits
+
+✅ **Type Safety**: Full TypeScript type safety for API components
+✅ **IntelliSense**: Complete IDE support with autocomplete
+✅ **Consistency**: Ensures frontend and backend stay in sync
+✅ **Zero Runtime Cost**: Pure TypeScript types with no runtime overhead
+✅ **Multi-Library Support**: Works with VineJS, Zod, and TypeBox
+✅ **Flexible Organization**: Support for multiple files and directories
 
 ### Using Decorators with TypeBox, Zod, and VineJS
 
@@ -312,6 +462,40 @@ routes: {
 
 > **Note**: Only routes with explicit decorators will be documented, regardless of include/exclude patterns. The filtering options help optimize which routes are scanned for decorators.
 
+### Components Configuration
+
+```typescript
+components: {
+  /**
+   * Array of file paths or directory paths to include schemas
+   * Supports multiple files, directories, and patterns
+   */
+  include: [
+    'app/schemas/index.ts',        // Single file
+    'app/schemas/*.ts',            // Pattern matching
+    'app/models',                  // Directory (recursive)
+    'app/validators/schemas.ts',   // Specific file
+  ],
+
+  /**
+   * Optional: Exclude patterns for schema files
+   * Array of glob patterns to exclude specific files
+   */
+  exclude: [
+    '**/*.test.ts',
+    '**/*.spec.ts',
+    '**/internal/*.ts',
+  ],
+}
+```
+
+The components feature automatically:
+
+- Scans specified files and directories for schema exports
+- Detects VineJS, Zod, and TypeBox schemas by naming conventions and structure
+- Converts schemas to OpenAPI component schemas
+- Enables proper TypeScript type generation with `openapi-typescript`
+
 ### Custom Specification
 
 ```typescript
@@ -363,6 +547,17 @@ If schemas aren't converting properly:
 1. **Install schema libraries**: Ensure TypeBox, Zod, or VineJS are installed if you're using them
 2. **Check schema format**: Verify your schemas match the expected format
 3. **Fallback behavior**: The package will fallback to raw JSON Schema if conversion fails
+
+### Components feature issues
+
+If the components feature isn't working as expected:
+
+1. **Check file paths**: Ensure the `include` paths in your components configuration point to existing files/directories
+2. **Verify exports**: Make sure your schema files export schemas with names ending in "Schema" (e.g., `userSchema`, `productSchema`)
+3. **Schema detection**: The feature automatically detects VineJS, Zod, and TypeBox schemas - ensure you're using supported patterns
+4. **Check console warnings**: Look for warning messages about missing files or conversion errors
+5. **Validate generated spec**: Use `node ace swagger:validate` to check if component schemas are properly included
+6. **Test with openapi-typescript**: Run `npx openapi-typescript http://localhost:3333/docs/json -o ./types/api-schema.ts` to verify TypeScript generation
 
 ## Contributing
 

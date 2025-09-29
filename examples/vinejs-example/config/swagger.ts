@@ -112,6 +112,22 @@ export default defineConfig({
   },
 
   /**
+   * Components configuration for generating OpenAPI component schemas
+   * This allows openapi-typescript to generate proper TypeScript types
+   */
+  components: {
+    /**
+     * Include schemas from multiple sources
+     * This will automatically convert VineJS schemas to OpenAPI component schemas
+     */
+    include: [
+      'app/schemas/index.ts',
+      'app/schemas/product.schema.ts',
+      'app/models', // Directory scanning
+    ],
+  },
+
+  /**
    * Global tags for organizing endpoints
    */
   tags: [
@@ -122,6 +138,10 @@ export default defineConfig({
     {
       name: 'Posts',
       description: 'Post management operations with VineJS schemas',
+    },
+    {
+      name: 'Campaigns',
+      description: 'Campaign management operations with component schemas',
     },
   ],
 })
