@@ -7,121 +7,108 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="{{ description || 'API Documentation' }}" />
-        <link
-            rel="icon"
-            type="image/svg+xml"
-            href=data:image/svg+xml,
-            svg
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 100 100'
-        />
-        <text y='.9em' font-size='90'>
-            📚
-        </text>
-    </svg>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-        }
-        
-        #scalar-container {
-            height: 100vh;
-            width: 100%;
-        }
-        
-        /* Custom scrollbar */
-        
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-        
-        /* Dark mode scrollbar */
-        
-        @media (prefers-color-scheme: dark) {
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            }
+            
+            #scalar-container {
+                height: 100vh;
+                width: 100%;
+            }
+            
+            /* Custom scrollbar */
+            
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            
             ::-webkit-scrollbar-track {
-                background: #2d2d2d;
+                background: #f1f1f1;
             }
-        
+            
             ::-webkit-scrollbar-thumb {
-                background: #555;
+                background: #c1c1c1;
+                border-radius: 4px;
             }
-        
+            
             ::-webkit-scrollbar-thumb:hover {
-                background: #777;
+                background: #a8a8a8;
             }
-        }
-        
-        @if(customCss)
-                {{{ customCss }}}
+            
+            /* Dark mode scrollbar */
+            
+            @media (prefers-color-scheme: dark) {
+                ::-webkit-scrollbar-track {
+                    background: #2d2d2d;
+                }
+            
+                ::-webkit-scrollbar-thumb {
+                    background: #555;
+                }
+            
+                ::-webkit-scrollbar-thumb:hover {
+                    background: #777;
+                }
+            }
+            
+            @if(customCss)
+                    {{{ customCss }}}
+                @end
+        </style>
+    </head>
+    <body>
+        <!-- Scalar API Reference Container -->
+        <div id="scalar-container">
+        </div>
+
+        <!-- Load Scalar API Reference -->
+        <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest">
+
+        </script>
+
+        <!-- Initialize Scalar -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // Ensure Scalar is loaded
+                if (typeof window.Scalar === "undefined" || !window.Scalar.createApiReference) {
+                    console.error("Scalar API Reference library failed to load");
+                    return;
+                }
+                try {
+                    // Initialize Scalar API Reference with proper configuration
+                    window.Scalar.createApiReference("#scalar-container", {
+                        // OpenAPI document URL
+                        spec: {
+                            url: "{{ specUrl }}"
+                        },
+                        // Basic configuration - use theme from config
+                        @if(theme === 'auto')
+                theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? "moon" : "default",
+            @else
+                theme: "{{ theme || 'default' }}",
             @end
-    </style>
-</head>
-<body>
-    <!-- Scalar API Reference Container -->
-    <div id="scalar-container">
-    </div>
 
-    <!-- Load Scalar API Reference -->
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest">
-
-    </script>
-
-    <!-- Initialize Scalar -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Ensure Scalar is loaded
-            if (typeof window.Scalar === "undefined" || !window.Scalar.createApiReference) {
-                console.error("Scalar API Reference library failed to load");
-                return;
-            }
-            try {
-                // Initialize Scalar API Reference with proper configuration
-                window.Scalar.createApiReference("#scalar-container", {
-                    // OpenAPI document URL
-                    spec: {
-                        url: "{{ specUrl }}"
-                    },
-                    // Basic configuration - use theme from config
-                    @if(theme === 'auto')
-            theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? "moon" : "default",
-        @else
-            theme: "{{ theme || 'default' }}",
-        @end
-
-                    layout: "{{ layout || "modern" }}",
-                    showSidebar: {{ showSidebar !== false ? 'true' : 'false' }},
-                    searchHotKey: "{{ searchHotKey || "k" }}",
-                    // Metadata
-                    metaData: {
-                        title: "{{ title }}",
-                        description: "{{ description || "API Documentation" }}"
-                    },
-                    // Additional configuration
-                    hideDownloadButton: false,
-                    hideTestRequestButton: false,
-                    darkMode: false,
-                    hideDarkModeToggle: false
-                });
-                console.log("Scalar API Reference initialized successfully");
-            } catch (error) {
-                console.error("Failed to initialize Scalar API Reference:", error);
-            }
-        });
-    </script>
-</body>
+                        layout: "{{ layout || "modern" }}",
+                        showSidebar: {{ showSidebar !== false ? 'true' : 'false' }},
+                        searchHotKey: "{{ searchHotKey || "k" }}",
+                        // Metadata
+                        metaData: {
+                            title: "{{ title }}",
+                            description: "{{ description || "API Documentation" }}"
+                        },
+                        // Additional configuration
+                        hideDownloadButton: false,
+                        hideTestRequestButton: false,
+                        darkMode: false,
+                        hideDarkModeToggle: false
+                    });
+                } catch (error) {
+                    console.error("Failed to initialize Scalar API Reference:", error);
+                }
+            });
+        </script>
+    </body>
 </html>

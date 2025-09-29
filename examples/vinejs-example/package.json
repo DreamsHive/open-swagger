@@ -43,6 +43,7 @@
     "@types/node": "^22.15.18",
     "eslint": "^9.26.0",
     "hot-hook": "^0.4.0",
+    "openapi-typescript": "^7.9.1",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.5.3",
     "ts-node-maintained": "^10.9.5",
@@ -51,8 +52,8 @@
   "dependencies": {
     "@adonisjs/core": "^6.18.0",
     "@vinejs/vine": "^3.0.1",
-    "edge.js": "^6.3.0",
     "adonis-open-swagger": "file:../..",
+    "edge.js": "^6.3.0",
     "reflect-metadata": "^0.2.2"
   },
   "hotHook": {

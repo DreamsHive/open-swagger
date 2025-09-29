@@ -30,3 +30,13 @@ export const UserListSchema = vine.object({
     lastPage: vine.number(),
   }),
 })
+
+// Simple user schema (lowercase naming convention)
+export const userSchema = vine.object({
+  id: vine.number().positive(),
+  name: vine.string().minLength(2).maxLength(50),
+  email: vine.string().email(),
+  age: vine.number().min(18).max(120).optional(),
+  createdAt: vine.string(),
+  updatedAt: vine.string(),
+})
