@@ -1,10 +1,58 @@
 import { test } from '@japa/runner'
 
+/**
+ * Helper function to resolve metadata promises (similar to RouteParser.resolveMetadataPromises)
+ */
+async function resolveMetadataPromises(metadata: any): Promise<any> {
+  if (!metadata) return metadata
+
+  const resolved = { ...metadata }
+
+  // Resolve response promises
+  if (resolved.responses) {
+    const responseEntries = Object.entries(resolved.responses)
+    const resolvedResponses: Record<string, any> = {}
+
+    for (const [status, responseData] of responseEntries) {
+      if (responseData && typeof (responseData as any).then === 'function') {
+        // It's a promise, resolve it
+        resolvedResponses[status] = await (responseData as Promise<any>)
+      } else {
+        resolvedResponses[status] = responseData
+      }
+    }
+
+    resolved.responses = resolvedResponses
+  }
+
+  // Resolve request body promise
+  if (resolved.requestBody && typeof (resolved.requestBody as any).then === 'function') {
+    resolved.requestBody = await (resolved.requestBody as Promise<any>)
+  }
+
+  // Resolve parameter promises
+  if (resolved.parameters && Array.isArray(resolved.parameters)) {
+    const resolvedParameters = []
+
+    for (const param of resolved.parameters) {
+      if (param && typeof (param as any).then === 'function') {
+        resolvedParameters.push(await (param as Promise<any>))
+      } else {
+        resolvedParameters.push(param)
+      }
+    }
+
+    resolved.parameters = resolvedParameters
+  }
+
+  return resolved
+}
+
 test.group('Swagger Decorators', () => {
   test('should work with SwaggerInfo decorator', async ({ assert }) => {
     const { SwaggerInfo, getSwaggerMetadata } = await import('../src/decorators.js')
 
-    class TestController {
+    class SwaggerInfoTestController {
       @SwaggerInfo({
         tags: ['Users'],
         summary: 'Get all users',
@@ -15,7 +63,7 @@ test.group('Swagger Decorators', () => {
       }
     }
 
-    const metadata = getSwaggerMetadata(TestController.prototype, 'testMethod')
+    const metadata = getSwaggerMetadata(SwaggerInfoTestController.prototype, 'testMethod')
 
     assert.isObject(metadata)
     assert.equal(metadata?.summary, 'Get all users')
@@ -29,7 +77,7 @@ test.group('Swagger Decorators', () => {
   test('should handle response decorator', async ({ assert }) => {
     const { SwaggerResponse, getSwaggerMetadata } = await import('../src/decorators.js')
 
-    class TestController {
+    class SwaggerResponseTestController {
       @SwaggerResponse(200, 'Success response', {
         type: 'object',
         properties: {
@@ -42,7 +90,8 @@ test.group('Swagger Decorators', () => {
       }
     }
 
-    const metadata = getSwaggerMetadata(TestController.prototype, 'testMethod')
+    const rawMetadata = getSwaggerMetadata(SwaggerResponseTestController.prototype, 'testMethod')
+    const metadata = await resolveMetadataPromises(rawMetadata)
 
     assert.isObject(metadata?.responses)
     assert.property(metadata?.responses, '200')
@@ -54,7 +103,7 @@ test.group('Swagger Decorators', () => {
   test('should handle request body decorator', async ({ assert }) => {
     const { SwaggerRequestBody, getSwaggerMetadata } = await import('../src/decorators.js')
 
-    class TestController {
+    class SwaggerRequestBodyTestController {
       @SwaggerRequestBody('Request body description', {
         type: 'object',
         properties: {
@@ -66,7 +115,8 @@ test.group('Swagger Decorators', () => {
       }
     }
 
-    const metadata = getSwaggerMetadata(TestController.prototype, 'testMethod')
+    const rawMetadata = getSwaggerMetadata(SwaggerRequestBodyTestController.prototype, 'testMethod')
+    const metadata = await resolveMetadataPromises(rawMetadata)
 
     assert.isObject(metadata?.requestBody)
     assert.equal(metadata?.requestBody.description, 'Request body description')
@@ -77,7 +127,7 @@ test.group('Swagger Decorators', () => {
   test('should handle parameter decorator', async ({ assert }) => {
     const { SwaggerParameter, getSwaggerMetadata } = await import('../src/decorators.js')
 
-    class TestController {
+    class SwaggerParameterTestController {
       @SwaggerParameter('id', 'path', { type: 'integer' }, true, 'User ID')
       @SwaggerParameter('page', 'query', { type: 'integer' }, false, 'Page number')
       testMethod() {
@@ -85,7 +135,8 @@ test.group('Swagger Decorators', () => {
       }
     }
 
-    const metadata = getSwaggerMetadata(TestController.prototype, 'testMethod')
+    const rawMetadata = getSwaggerMetadata(SwaggerParameterTestController.prototype, 'testMethod')
+    const metadata = await resolveMetadataPromises(rawMetadata)
 
     assert.isArray(metadata?.parameters)
     assert.lengthOf(metadata?.parameters, 2)
@@ -102,7 +153,7 @@ test.group('Swagger Decorators', () => {
   test('should handle SwaggerParam decorator', async ({ assert }) => {
     const { SwaggerParam, getSwaggerMetadata } = await import('../src/decorators.js')
 
-    class TestController {
+    class SwaggerParamTestController {
       @SwaggerParam(
         {
           name: 'id',
@@ -125,7 +176,8 @@ test.group('Swagger Decorators', () => {
       }
     }
 
-    const metadata = getSwaggerMetadata(TestController.prototype, 'testMethod')
+    const rawMetadata = getSwaggerMetadata(SwaggerParamTestController.prototype, 'testMethod')
+    const metadata = await resolveMetadataPromises(rawMetadata)
 
     assert.isArray(metadata?.parameters)
     assert.lengthOf(metadata?.parameters, 2)
@@ -144,7 +196,7 @@ test.group('Swagger Decorators', () => {
   test('should handle SwaggerHeader decorator', async ({ assert }) => {
     const { SwaggerHeader, getSwaggerMetadata } = await import('../src/decorators.js')
 
-    class TestController {
+    class SwaggerHeaderTestController {
       @SwaggerHeader(
         {
           name: 'Authorization',
@@ -165,7 +217,8 @@ test.group('Swagger Decorators', () => {
       }
     }
 
-    const metadata = getSwaggerMetadata(TestController.prototype, 'testMethod')
+    const rawMetadata = getSwaggerMetadata(SwaggerHeaderTestController.prototype, 'testMethod')
+    const metadata = await resolveMetadataPromises(rawMetadata)
 
     assert.isArray(metadata?.parameters)
     assert.lengthOf(metadata?.parameters, 2)
