@@ -1,5 +1,5 @@
 import { join, resolve, isAbsolute } from 'node:path'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, statSync, readFileSync, readdirSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import type { ApplicationService } from '@adonisjs/core/types'
 import type { ComponentsConfig, SchemaValidator } from './types.js'
@@ -29,6 +29,16 @@ export class ComponentParser {
 
       // Process each include path
       for (const includePath of this.config.include) {
+        // Handle wildcard patterns for import aliases
+        if (includePath.includes('*') && includePath.startsWith('#')) {
+          const expandedPaths = this.expandWildcardAlias(includePath)
+          for (const expandedPath of expandedPaths) {
+            const fileSchemas = await this.parseSchemaFile(expandedPath)
+            Object.assign(schemas, fileSchemas)
+          }
+          continue
+        }
+
         const resolvedPath = this.resolvePath(includePath)
 
         if (!existsSync(resolvedPath)) {
@@ -62,11 +72,172 @@ export class ComponentParser {
   }
 
   /**
+   * Expand wildcard import aliases to actual file paths
+   */
+  private expandWildcardAlias(aliasPath: string): string[] {
+    try {
+      // Get the application root directory
+      let appRoot = this.app.appRoot.toString()
+
+      // Handle file:// URLs from appRoot
+      if (appRoot.startsWith('file://')) {
+        appRoot = appRoot.replace('file://', '')
+      }
+
+      // Read package.json
+      const packageJsonPath = resolve(appRoot, 'package.json')
+      if (!existsSync(packageJsonPath)) {
+        return []
+      }
+
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+      const imports = packageJson.imports
+
+      if (!imports || typeof imports !== 'object') {
+        return []
+      }
+
+      // Find matching import alias
+      for (const [alias, target] of Object.entries(imports)) {
+        if (typeof target !== 'string') continue
+
+        // Handle wildcard patterns like "#schemas/*" -> "./app/schemas/*.js"
+        if (alias.endsWith('/*') && aliasPath.startsWith(alias.slice(0, -2))) {
+          // For target, we need to remove the wildcard pattern and extension
+          // "./app/schemas/*.js" -> "./app/schemas/"
+          let targetBase = target
+          if (targetBase.includes('/*')) {
+            targetBase = targetBase.substring(0, targetBase.indexOf('/*'))
+          }
+
+          // Get the directory to scan
+          const targetDir = resolve(appRoot, targetBase)
+
+          if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
+            return []
+          }
+
+          // Scan directory for matching files
+          const files: string[] = []
+          const dirFiles = this.scanDirectorySync(targetDir)
+
+          for (const file of dirFiles) {
+            // Check if file matches the pattern (e.g., .ts or .js files)
+            if (file.endsWith('.ts') || file.endsWith('.js')) {
+              files.push(file)
+            }
+          }
+
+          return files
+        }
+      }
+
+      return []
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * Synchronously scan directory for files
+   */
+  private scanDirectorySync(dirPath: string): string[] {
+    try {
+      const files: string[] = []
+      const entries = readdirSync(dirPath, { withFileTypes: true })
+
+      for (const entry of entries) {
+        const fullPath = join(dirPath, entry.name)
+
+        if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
+          files.push(fullPath)
+        }
+      }
+
+      return files
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * Resolve import aliases from package.json imports field
+   */
+  private resolveImportAlias(aliasPath: string): string | null {
+    try {
+      // Get the application root directory
+      let appRoot = this.app.appRoot.toString()
+
+      // Handle file:// URLs from appRoot
+      if (appRoot.startsWith('file://')) {
+        appRoot = appRoot.replace('file://', '')
+      }
+
+      // Read package.json
+      const packageJsonPath = resolve(appRoot, 'package.json')
+      if (!existsSync(packageJsonPath)) {
+        return null
+      }
+
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+      const imports = packageJson.imports
+
+      if (!imports || typeof imports !== 'object') {
+        return null
+      }
+
+      // Find matching import alias
+      for (const [alias, target] of Object.entries(imports)) {
+        if (typeof target !== 'string') continue
+
+        // Handle exact matches
+        if (aliasPath === alias) {
+          return resolve(appRoot, target)
+        }
+
+        // Handle wildcard patterns like "#schemas/*" -> "./app/schemas/*.js"
+        if (alias.endsWith('/*') && aliasPath.startsWith(alias.slice(0, -2))) {
+          const aliasBase = alias.slice(0, -2) // Remove /*
+          const targetBase = target.slice(0, -2) // Remove /*
+          const remainingPath = aliasPath.slice(aliasBase.length + 1) // Remove alias base and /
+
+          // Replace * with the remaining path
+          const resolvedTarget = targetBase.replace(/\*$/, remainingPath)
+
+          // If target has .js extension but we're looking for .ts files, try .ts first
+          if (resolvedTarget.endsWith('.js')) {
+            const tsPath = resolvedTarget.replace(/\.js$/, '.ts')
+            const fullTsPath = resolve(appRoot, tsPath)
+            if (existsSync(fullTsPath)) {
+              return fullTsPath
+            }
+          }
+
+          return resolve(appRoot, resolvedTarget)
+        }
+      }
+
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  /**
    * Resolve path relative to the application root
    */
   private resolvePath(path: string): string {
     if (isAbsolute(path)) {
       return path
+    }
+
+    // Handle import aliases (paths starting with #)
+    if (path.startsWith('#')) {
+      const resolvedAlias = this.resolveImportAlias(path)
+      if (resolvedAlias) {
+        return resolvedAlias
+      }
+      // If alias resolution fails, fall back to treating it as a regular path
     }
 
     // Get the application root directory

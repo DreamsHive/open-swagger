@@ -543,15 +543,20 @@ routes: {
 
 ### Components Configuration
 
+The components configuration supports **AdonisJS import aliases** defined in your `package.json` imports field:
+
 ```typescript
 components: {
   /**
    * Array of file paths or directory paths to include schemas
-   * Supports multiple files, directories, and patterns
+   * Supports import aliases, patterns, files, and directories
    */
   include: [
-    'app/schemas/index.ts',        // Single file
-    'app/schemas/*.ts',            // Pattern matching
+    '#schemas/*',                  // Import alias wildcard - expands to all files in app/schemas/
+    '#models/*',                   // Import alias wildcard - expands to all files in app/models/
+    '#schemas/index',              // Specific import alias
+    'app/schemas/index.ts',        // Single file (regular path)
+    'app/schemas/*.ts',            // Pattern matching (regular path)
     'app/models',                  // Directory (recursive)
     'app/validators/schemas.ts',   // Specific file
   ],
@@ -568,8 +573,30 @@ components: {
 }
 ```
 
+#### Import Alias Support
+
+If your `package.json` contains import aliases:
+
+```json
+{
+  "imports": {
+    "#schemas/*": "./app/schemas/*.js",
+    "#models/*": "./app/models/*.js",
+    "#schemas/index": "./app/schemas/index.js"
+  }
+}
+```
+
+You can use them directly in your components configuration:
+
+- **`#schemas/*`** - Automatically expands to all `.ts` and `.js` files in `app/schemas/`
+- **`#schemas/index`** - Resolves to the specific `app/schemas/index.ts` file
+- **Regular paths** - Still supported alongside import aliases
+
 The components feature automatically:
 
+- Resolves AdonisJS import aliases from `package.json` imports field
+- Expands wildcard patterns to find all matching files
 - Scans specified files and directories for schema exports
 - Detects VineJS, Zod, and TypeBox schemas by naming conventions and structure
 - Converts schemas to OpenAPI component schemas
