@@ -187,6 +187,7 @@ export class ComponentParser {
       }
 
       // Find matching import alias
+      // First pass: Look for exact matches (prioritize over wildcards)
       for (const [alias, target] of Object.entries(imports)) {
         if (typeof target !== 'string') continue
 
@@ -194,6 +195,11 @@ export class ComponentParser {
         if (aliasPath === alias) {
           return resolve(appRoot, target)
         }
+      }
+
+      // Second pass: Look for wildcard patterns
+      for (const [alias, target] of Object.entries(imports)) {
+        if (typeof target !== 'string') continue
 
         // Handle wildcard patterns like "#schemas/*" -> "./app/schemas/*.js"
         if (alias.endsWith('/*') && aliasPath.startsWith(alias.slice(0, -2))) {
