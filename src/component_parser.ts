@@ -343,7 +343,6 @@ export class ComponentParser {
           }
         }
       }
-
       return schemas
     } catch (error: any) {
       // eslint-disable-next-line no-console
@@ -428,7 +427,12 @@ export class ComponentParser {
       return false
     }
 
-    // Check if any property looks like a VineJS field
+    // First check if the object itself is a VineJS schema (compiled schema)
+    if (this.isVineJSField(obj)) {
+      return true
+    }
+
+    // Then check if any property looks like a VineJS field (raw schema definition)
     for (const value of Object.values(obj)) {
       if (this.isVineJSField(value)) {
         return true
