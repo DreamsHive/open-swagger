@@ -201,7 +201,7 @@ function fixTypeBoxNullableFields(schema: any): any {
  */
 async function vineToJsonSchema(vineSchema: any): Promise<any> {
   try {
-    // Import VineJS dynamically
+    // Import VineJS dynamically (optional dependency)
     const vine = await import('@vinejs/vine')
 
     // Step 1: Compile the VineJS schema

@@ -2,10 +2,12 @@
  * Adonis Open Swagger Commands
  */
 
-import type { CommandMetaData } from '@adonisjs/ace/types'
-import type { BaseCommand } from '@adonisjs/core/ace'
 import GenerateDocs from './generate_docs.js'
 import ValidateSpec from './validate_spec.js'
+
+// Types
+import type { CommandMetaData } from '@adonisjs/core/types/ace'
+import type { BaseCommand } from '@adonisjs/core/ace'
 
 /**
  * Returns an array of command metadata

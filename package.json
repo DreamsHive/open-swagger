@@ -109,13 +109,18 @@
   },
   "optionalDependencies": {
     "@sinclair/typebox": "^0.34.41",
+    "@vinejs/vine": "^2.1.0",
     "zod": "^4.1.8"
   },
   "peerDependencies": {
-    "@adonisjs/core": "^6.2.0"
+    "@adonisjs/core": "^6.2.0",
+    "@vinejs/vine": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "@sinclair/typebox": {
+      "optional": true
+    },
+    "@vinejs/vine": {
       "optional": true
     },
     "zod": {
