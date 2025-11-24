@@ -89,6 +89,7 @@ export class RouteParser {
                   name: route.name,
                   domain: route.domain,
                   importFunction: handlerInfo.importFunction,
+                  controllerClass: handlerInfo.controllerClass,
                   methodName: handlerInfo.methodName,
                 })
               }
@@ -109,6 +110,7 @@ export class RouteParser {
                   name: route.name,
                   domain: route.domain,
                   importFunction: handlerInfo.importFunction,
+                  controllerClass: handlerInfo.controllerClass,
                   methodName: handlerInfo.methodName,
                 })
               }
@@ -181,17 +183,31 @@ export class RouteParser {
   private extractHandlerInfo(route: any): {
     handler: string
     importFunction?: () => Promise<any>
+    controllerClass?: any
     methodName?: string
   } {
     if (route.handler) {
       // Handle array handlers like [() => import('#controllers/auth_controller'), 'login']
+      // or [AuthController, 'login']
       if (Array.isArray(route.handler) && route.handler.length === 2) {
-        const [importFn, methodName] = route.handler
-        if (typeof importFn === 'function' && typeof methodName === 'string') {
-          return {
-            handler: `Array[${importFn.name || 'ImportFunction'}, ${methodName}]`,
-            importFunction: importFn,
-            methodName: methodName,
+        const [firstElement, methodName] = route.handler
+        if (typeof firstElement === 'function' && typeof methodName === 'string') {
+          // Check if it's a class (constructor function) or an import function
+          // Classes have a prototype, import functions don't
+          if (firstElement.prototype && firstElement.prototype.constructor === firstElement) {
+            // It's a direct class reference like [AuthController, 'login']
+            return {
+              handler: `Array[${firstElement.name || 'Controller'}, ${methodName}]`,
+              controllerClass: firstElement,
+              methodName: methodName,
+            }
+          } else {
+            // It's an import function like [() => import('#controllers/auth_controller'), 'login']
+            return {
+              handler: `Array[${firstElement.name || 'ImportFunction'}, ${methodName}]`,
+              importFunction: firstElement,
+              methodName: methodName,
+            }
           }
         }
       }
@@ -314,7 +330,27 @@ export class RouteParser {
    */
   private async getCustomMetadata(route: RouteInfo): Promise<any> {
     try {
-      // Handle array handlers with import functions first
+      // Handle array handlers with direct controller class reference first
+      if (route.controllerClass && route.methodName) {
+        try {
+          const ControllerClass = route.controllerClass
+
+          if (ControllerClass && ControllerClass.prototype) {
+            const metadata = getSwaggerMetadata(ControllerClass.prototype, route.methodName)
+            if (metadata) {
+              return await this.resolveMetadataPromises(metadata)
+            }
+          }
+
+          // If no metadata found but controller exists, return null (not an error)
+          return null
+        } catch {
+          // Silently continue with fallback
+          return null
+        }
+      }
+
+      // Handle array handlers with import functions
       if (route.importFunction && route.methodName) {
         try {
           // Execute the import function to get the controller module
@@ -332,10 +368,8 @@ export class RouteParser {
 
           // If no metadata found but controller exists, return null (not an error)
           return null
-        } catch (error: any) {
-          // Log import function errors but continue with fallback
-          // eslint-disable-next-line no-console
-          console.warn(`Error executing import function for route ${route.pattern}:`, error.message)
+        } catch {
+          // Silently continue with fallback
           return null
         }
       }

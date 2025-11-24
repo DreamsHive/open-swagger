@@ -146,12 +146,12 @@ test.group('RouteParser - Array Handler Support', () => {
     const spec = await parser.generateSpec()
 
     assert.isObject(spec.paths)
-    
+
     // Check array handler route
     assert.property(spec.paths, '/array-test')
     assert.property(spec.paths['/array-test'], 'get')
     assert.equal(spec.paths['/array-test'].get.summary, 'Array handler endpoint')
-    
+
     // String handler route should not be processed (no controller resolution in test)
     // but the paths object should still be valid
     assert.isObject(spec.paths)
@@ -270,5 +270,74 @@ test.group('RouteParser - Array Handler Support', () => {
     // Should not crash and should return empty paths (no valid routes with metadata)
     assert.isObject(spec.paths)
     assert.equal(Object.keys(spec.paths).length, 0)
+  })
+
+  test('should handle array handlers with direct class reference', async ({ assert }) => {
+    const { RouteParser } = await import('../src/route_parser.js')
+    const { SwaggerInfo, SwaggerResponse } = await import('../src/decorators.js')
+
+    // Mock controller class with decorators (like the user's GlobalController)
+    class GlobalController {
+      @SwaggerInfo({
+        tags: ['Global'],
+        summary: 'Health check',
+        description: 'Verifica o status de saúde da aplicação.',
+      })
+      @SwaggerResponse(200, 'ok', {
+        contentType: 'text/plain',
+      })
+      health() {
+        return 'ok'
+      }
+    }
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {},
+      routes: {
+        autoScan: false,
+      },
+    }
+
+    // Mock router with direct class reference (not an import function)
+    const mockRouter = {
+      toJSON: () => ({
+        root: [
+          {
+            pattern: '/health',
+            method: 'GET',
+            handler: [GlobalController, 'health'],
+            middleware: [],
+            name: 'health',
+          },
+        ],
+      }),
+    }
+
+    const mockApp = {
+      container: {
+        make: async (service: string) => {
+          if (service === 'router') {
+            return mockRouter
+          }
+          throw new Error(`Service ${service} not found`)
+        },
+      },
+    }
+
+    const parser = new RouteParser(config, mockApp as any)
+    const spec = await parser.generateSpec()
+
+    assert.isObject(spec.paths)
+    assert.property(spec.paths, '/health')
+    assert.property(spec.paths['/health'], 'get')
+    assert.equal(spec.paths['/health'].get.summary, 'Health check')
+    assert.equal(spec.paths['/health'].get.description, 'Verifica o status de saúde da aplicação.')
+    assert.deepEqual(spec.paths['/health'].get.tags, ['Global'])
   })
 })

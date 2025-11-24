@@ -177,8 +177,14 @@ export interface RouteInfo {
    */
   importFunction?: () => Promise<any>
   /**
+   * Direct controller class reference (array handler format)
+   * Used when route handler is [AuthController, 'methodName']
+   */
+  controllerClass?: any
+  /**
    * Method name for array handler format
    * Used when route handler is [() => import('#controllers/...'), 'methodName']
+   * or [AuthController, 'methodName']
    */
   methodName?: string
 }
