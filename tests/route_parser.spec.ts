@@ -340,4 +340,77 @@ test.group('RouteParser - Array Handler Support', () => {
     assert.equal(spec.paths['/health'].get.description, 'Verifica o status de saúde da aplicação.')
     assert.deepEqual(spec.paths['/health'].get.tags, ['Global'])
   })
+
+  test('should handle array handler with single action controller', async ({ assert }) => {
+    const { RouteParser } = await import('../src/route_parser.js')
+    const { SwaggerInfo } = await import('../src/decorators.js')
+
+    // Mock controller class with decorator
+    class TestController {
+      @SwaggerInfo({
+        tags: ['Test'],
+        summary: 'Test endpoint',
+        description: 'Test endpoint with array handler',
+      })
+      handle() {
+        return 'test'
+      }
+    }
+
+    // Mock import function
+    const mockImportFunction = async () => ({ default: TestController })
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {},
+      routes: {
+        autoScan: false,
+      },
+    }
+
+    // Mock router with array handler
+    const mockRouter = {
+      toJSON: () => ({
+        root: [
+          {
+            pattern: '/test',
+            methods: ['GET'],
+            handler: {
+              reference: [mockImportFunction],
+              name: 'TestController',
+              handle: [TestController.prototype.handle],
+            },
+            middleware: [],
+            name: 'test',
+          },
+        ],
+      }),
+    }
+
+    const mockApp = {
+      container: {
+        make: async (service: string) => {
+          if (service === 'router') {
+            return mockRouter
+          }
+          throw new Error(`Service ${service} not found`)
+        },
+      },
+    }
+
+    const parser = new RouteParser(config, mockApp as any)
+    const spec = await parser.generateSpec()
+
+    assert.isObject(spec.paths)
+    assert.property(spec.paths, '/test')
+    assert.property(spec.paths['/test'], 'get')
+    assert.equal(spec.paths['/test'].get.summary, 'Test endpoint')
+    assert.equal(spec.paths['/test'].get.description, 'Test endpoint with array handler')
+    assert.deepEqual(spec.paths['/test'].get.tags, ['Test'])
+  })
 })
