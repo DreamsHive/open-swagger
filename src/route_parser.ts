@@ -211,6 +211,17 @@ export class RouteParser {
           }
         }
       }
+
+      // Handle object handlers for single action controllers
+      if (typeof route.handler === 'object' && route.handler.reference && route.handler.handle) {
+        const [controllerModule] = route.handler.reference
+
+        return {
+          handler: `Array[${controllerModule.name}, handle]`,
+          importFunction: controllerModule,
+          methodName: 'handle',
+        }
+      }
     }
 
     // For all other handler types, use the existing extractHandler method
