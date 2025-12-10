@@ -127,6 +127,68 @@ export default defineConfig({
   ],
 
   /**
+   * Security schemes configuration
+   * Supports: API Key (header, query, cookie), HTTP (bearer, basic), OAuth2, OpenID Connect
+   */
+  // securitySchemes: {
+  //   // Bearer Token (JWT) Authentication
+  //   bearerAuth: {
+  //     type: 'http',
+  //     scheme: 'bearer',
+  //     bearerFormat: 'JWT',
+  //     description: 'Enter your JWT token',
+  //   },
+  //
+  //   // Cookie Authentication (for session-based auth like Better-Auth)
+  //   cookieAuth: {
+  //     type: 'apiKey',
+  //     in: 'cookie',
+  //     name: 'session', // or 'JSESSIONID', 'auth_token', etc.
+  //     description: 'Session cookie for authentication',
+  //   },
+  //
+  //   // API Key in Header
+  //   apiKeyAuth: {
+  //     type: 'apiKey',
+  //     in: 'header',
+  //     name: 'X-API-Key',
+  //     description: 'API key passed in header',
+  //   },
+  //
+  //   // Basic Authentication
+  //   basicAuth: {
+  //     type: 'http',
+  //     scheme: 'basic',
+  //     description: 'Basic HTTP authentication',
+  //   },
+  //
+  //   // OAuth2 Authentication
+  //   oauth2Auth: {
+  //     type: 'oauth2',
+  //     description: 'OAuth2 authentication',
+  //     flows: {
+  //       authorizationCode: {
+  //         authorizationUrl: 'https://example.com/oauth/authorize',
+  //         tokenUrl: 'https://example.com/oauth/token',
+  //         scopes: {
+  //           'read:users': 'Read user information',
+  //           'write:users': 'Modify user information',
+  //         },
+  //       },
+  //     },
+  //   },
+  // },
+
+  /**
+   * Global security requirements (applied to all endpoints by default)
+   * Use @SwaggerSecurity decorator to override for specific endpoints
+   */
+  // security: [
+  //   { bearerAuth: [] },
+  //   // { cookieAuth: [] },
+  // ],
+
+  /**
    * Components configuration for generating OpenAPI component schemas
    * This allows openapi-typescript to generate proper TypeScript types
    */

@@ -541,6 +541,128 @@ routes: {
 
 > **Note**: Only routes with explicit decorators will be documented, regardless of include/exclude patterns. The filtering options help optimize which routes are scanned for decorators.
 
+### Security Schemes
+
+Open Swagger supports all OpenAPI 3.0 security schemes including Cookie Authentication (useful for session-based auth like [Better-Auth](https://www.better-auth.com/)):
+
+```typescript
+// config/swagger.ts
+export default defineConfig({
+  // ... other config
+
+  securitySchemes: {
+    // Cookie Authentication (for session-based auth)
+    cookieAuth: {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'session', // or 'JSESSIONID', 'auth_token', etc.
+      description: 'Session cookie for authentication',
+    },
+
+    // Bearer Token (JWT) Authentication
+    bearerAuth: {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Enter your JWT token',
+    },
+
+    // API Key in Header
+    apiKeyAuth: {
+      type: 'apiKey',
+      in: 'header',
+      name: 'X-API-Key',
+      description: 'API key passed in header',
+    },
+
+    // Basic Authentication
+    basicAuth: {
+      type: 'http',
+      scheme: 'basic',
+      description: 'Basic HTTP authentication',
+    },
+
+    // OAuth2 Authentication
+    oauth2Auth: {
+      type: 'oauth2',
+      description: 'OAuth2 authentication',
+      flows: {
+        authorizationCode: {
+          authorizationUrl: 'https://example.com/oauth/authorize',
+          tokenUrl: 'https://example.com/oauth/token',
+          scopes: {
+            'read:users': 'Read user information',
+            'write:users': 'Modify user information',
+          },
+        },
+      },
+    },
+  },
+
+  // Global security (applied to all endpoints)
+  security: [
+    { cookieAuth: [] },
+    // { bearerAuth: [] },
+  ],
+})
+```
+
+#### Using `@SwaggerSecurity` Decorator
+
+Apply security requirements to specific endpoints:
+
+```typescript
+import { SwaggerInfo, SwaggerSecurity, SwaggerResponse } from 'adonis-open-swagger'
+
+export default class UsersController {
+  // Use cookie authentication for this endpoint
+  @SwaggerInfo({
+    tags: ['Users'],
+    summary: 'Get current user profile',
+  })
+  @SwaggerSecurity([{ cookieAuth: [] }])
+  @SwaggerResponse(200, 'User profile retrieved')
+  async profile({ auth, response }: HttpContext) {
+    return response.ok(auth.user)
+  }
+
+  // Public endpoint (no authentication required)
+  @SwaggerInfo({
+    tags: ['Users'],
+    summary: 'Get public user info',
+  })
+  @SwaggerSecurity([]) // Empty array = no security required
+  @SwaggerResponse(200, 'Public user info')
+  async publicInfo({ response }: HttpContext) {
+    return response.ok({ message: 'Public info' })
+  }
+
+  // OAuth2 with specific scopes
+  @SwaggerInfo({
+    tags: ['Admin'],
+    summary: 'Delete user',
+  })
+  @SwaggerSecurity([{ oauth2Auth: ['write:users'] }])
+  @SwaggerResponse(204, 'User deleted')
+  async destroy({ params, response }: HttpContext) {
+    // Delete user logic
+    return response.noContent()
+  }
+}
+```
+
+#### Supported Security Schemes
+
+| Type              | Description                          | Example Use Case                |
+| ----------------- | ------------------------------------ | ------------------------------- |
+| `apiKey` (cookie) | API key sent in a cookie             | Session-based auth, Better-Auth |
+| `apiKey` (header) | API key sent in a header             | API key authentication          |
+| `apiKey` (query)  | API key sent as query param          | Legacy API authentication       |
+| `http` (bearer)   | Bearer token in Authorization header | JWT authentication              |
+| `http` (basic)    | Basic HTTP authentication            | Simple username/password        |
+| `oauth2`          | OAuth 2.0 flows                      | Third-party integrations        |
+| `openIdConnect`   | OpenID Connect Discovery             | SSO integrations                |
+
 ### Components Configuration
 
 The components configuration supports **AdonisJS import aliases** defined in your `package.json` imports field:

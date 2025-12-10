@@ -233,4 +233,136 @@ test.group('Swagger Decorators', () => {
     assert.isFalse(versionHeader?.required)
     assert.equal(versionHeader?.description, 'API version')
   })
+
+  test('should handle SwaggerSecurity decorator with cookie auth', async ({ assert }) => {
+    const { SwaggerSecurity, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class SwaggerSecurityTestController {
+      @SwaggerSecurity([{ cookieAuth: [] }])
+      testMethodWithCookieAuth() {
+        return 'test'
+      }
+    }
+
+    const metadata = getSwaggerMetadata(
+      SwaggerSecurityTestController.prototype,
+      'testMethodWithCookieAuth'
+    )
+
+    assert.isArray(metadata?.security)
+    assert.lengthOf(metadata?.security, 1)
+    assert.deepEqual(metadata?.security[0], { cookieAuth: [] })
+  })
+
+  test('should handle SwaggerSecurity decorator with bearer auth', async ({ assert }) => {
+    const { SwaggerSecurity, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class SwaggerSecurityBearerTestController {
+      @SwaggerSecurity([{ bearerAuth: [] }])
+      testMethodWithBearerAuth() {
+        return 'test'
+      }
+    }
+
+    const metadata = getSwaggerMetadata(
+      SwaggerSecurityBearerTestController.prototype,
+      'testMethodWithBearerAuth'
+    )
+
+    assert.isArray(metadata?.security)
+    assert.lengthOf(metadata?.security, 1)
+    assert.deepEqual(metadata?.security[0], { bearerAuth: [] })
+  })
+
+  test('should handle SwaggerSecurity decorator with OAuth2 scopes', async ({ assert }) => {
+    const { SwaggerSecurity, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class SwaggerSecurityOAuth2TestController {
+      @SwaggerSecurity([{ oauth2Auth: ['read:users', 'write:users'] }])
+      testMethodWithOAuth2() {
+        return 'test'
+      }
+    }
+
+    const metadata = getSwaggerMetadata(
+      SwaggerSecurityOAuth2TestController.prototype,
+      'testMethodWithOAuth2'
+    )
+
+    assert.isArray(metadata?.security)
+    assert.lengthOf(metadata?.security, 1)
+    assert.deepEqual(metadata?.security[0], { oauth2Auth: ['read:users', 'write:users'] })
+  })
+
+  test('should handle SwaggerSecurity decorator with multiple security schemes', async ({
+    assert,
+  }) => {
+    const { SwaggerSecurity, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class SwaggerSecurityMultipleTestController {
+      @SwaggerSecurity([{ cookieAuth: [] }, { bearerAuth: [] }])
+      testMethodWithMultipleSecurity() {
+        return 'test'
+      }
+    }
+
+    const metadata = getSwaggerMetadata(
+      SwaggerSecurityMultipleTestController.prototype,
+      'testMethodWithMultipleSecurity'
+    )
+
+    assert.isArray(metadata?.security)
+    assert.lengthOf(metadata?.security, 2)
+    assert.deepEqual(metadata?.security[0], { cookieAuth: [] })
+    assert.deepEqual(metadata?.security[1], { bearerAuth: [] })
+  })
+
+  test('should handle SwaggerSecurity decorator with empty array (public endpoint)', async ({
+    assert,
+  }) => {
+    const { SwaggerSecurity, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class SwaggerSecurityPublicTestController {
+      @SwaggerSecurity([])
+      testMethodPublic() {
+        return 'test'
+      }
+    }
+
+    const metadata = getSwaggerMetadata(
+      SwaggerSecurityPublicTestController.prototype,
+      'testMethodPublic'
+    )
+
+    assert.isArray(metadata?.security)
+    assert.lengthOf(metadata?.security, 0)
+  })
+
+  test('should handle SwaggerDeprecated decorator', async ({ assert }) => {
+    const { SwaggerDeprecated, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class SwaggerDeprecatedTestController {
+      @SwaggerDeprecated(true)
+      testMethodDeprecated() {
+        return 'test'
+      }
+
+      @SwaggerDeprecated(false)
+      testMethodNotDeprecated() {
+        return 'test'
+      }
+    }
+
+    const metadataDeprecated = getSwaggerMetadata(
+      SwaggerDeprecatedTestController.prototype,
+      'testMethodDeprecated'
+    )
+    const metadataNotDeprecated = getSwaggerMetadata(
+      SwaggerDeprecatedTestController.prototype,
+      'testMethodNotDeprecated'
+    )
+
+    assert.isTrue(metadataDeprecated?.deprecated)
+    assert.isFalse(metadataNotDeprecated?.deprecated)
+  })
 })
