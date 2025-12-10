@@ -6,6 +6,7 @@ import {
   SwaggerRequestBody,
   SwaggerParam,
   SwaggerHeader,
+  typeboxFile,
 } from 'adonis-open-swagger'
 
 // TypeBox schemas for validation and documentation
@@ -267,5 +268,85 @@ export default class ProductsController {
 
     // Mock product deletion
     return response.status(204).send('')
+  }
+
+  @SwaggerInfo({
+    tags: ['Products'],
+    summary: 'Upload product image',
+    description: 'Upload an image for a product using TypeBox with typeboxFile helper',
+  })
+  @SwaggerParam(
+    {
+      name: 'id',
+      location: 'path',
+      description: 'Product ID',
+    },
+    Type.Integer({ minimum: 1 }),
+    true
+  )
+  @SwaggerRequestBody(
+    'Product image upload',
+    Type.Object({
+      name: Type.String({ minLength: 1, maxLength: 100 }),
+      image: typeboxFile({ description: 'Image file for the product' }),
+    }),
+    { contentType: 'multipart/form-data' }
+  )
+  @SwaggerResponse(200, 'Image uploaded successfully', ProductSchema)
+  @SwaggerResponse(400, 'Invalid file', ErrorSchema)
+  async uploadImage({ params, response }: HttpContext) {
+    const productId = params.id
+
+    return response.json({
+      id: parseInt(productId),
+      name: 'Product with image',
+      description: 'Product with uploaded image',
+      price: 99.99,
+      categoryId: 1,
+      inStock: true,
+      tags: ['image', 'upload'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  @SwaggerInfo({
+    tags: ['Products'],
+    summary: 'Upload multiple product images',
+    description: 'Upload multiple images for a product using TypeBox with typeboxFile helper',
+  })
+  @SwaggerParam(
+    {
+      name: 'id',
+      location: 'path',
+      description: 'Product ID',
+    },
+    Type.Integer({ minimum: 1 }),
+    true
+  )
+  @SwaggerRequestBody(
+    'Multiple product images upload',
+    Type.Object({
+      name: Type.String({ minLength: 1, maxLength: 100 }),
+      images: typeboxFile({ description: 'Image files', multiple: true, minItems: 1, maxItems: 5 }),
+    }),
+    { contentType: 'multipart/form-data' }
+  )
+  @SwaggerResponse(200, 'Images uploaded successfully', ProductSchema)
+  @SwaggerResponse(400, 'Invalid files', ErrorSchema)
+  async uploadMultipleImages({ params, response }: HttpContext) {
+    const productId = params.id
+
+    return response.json({
+      id: parseInt(productId),
+      name: 'Product with multiple images',
+      description: 'Product with uploaded images',
+      price: 199.99,
+      categoryId: 1,
+      inStock: true,
+      tags: ['images', 'upload', 'multiple'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
   }
 }

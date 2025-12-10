@@ -25,5 +25,9 @@ router
     router.post('/products', '#controllers/products_controller.store')
     router.put('/products/:id', '#controllers/products_controller.update')
     router.delete('/products/:id', '#controllers/products_controller.destroy')
+
+    // File upload routes with typeboxFile helper
+    router.post('/products/:id/image', '#controllers/products_controller.uploadImage')
+    router.post('/products/:id/images', '#controllers/products_controller.uploadMultipleImages')
   })
   .prefix('/api/v1')
