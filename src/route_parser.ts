@@ -1,6 +1,11 @@
 import type { ApplicationService } from '@adonisjs/core/types'
 import type { OpenSwaggerConfig, OpenAPISpec, RouteInfo, OpenAPIOperation } from './types.js'
-import { getSwaggerMetadata } from './decorators.js'
+import { getSwaggerMetadata, RAW_METADATA_MARKER, getGlobalValidator } from './decorators.js'
+import {
+  convertToJsonSchema,
+  createResponseSchema,
+  createRequestBodySchema,
+} from './schema_utils.js'
 
 /**
  * Parses AdonisJS routes and generates OpenAPI specification
@@ -644,19 +649,39 @@ export class RouteParser {
   }
 
   /**
-   * Resolve any promises in metadata (from async schema conversion)
+   * Check if an object contains raw metadata that needs conversion
+   */
+  private isRawMetadata(obj: any): boolean {
+    return obj && typeof obj === 'object' && obj[RAW_METADATA_MARKER] === true
+  }
+
+  /**
+   * Convert raw metadata to OpenAPI format
+   * This is called at spec generation time to avoid circular dependencies during module initialization
    */
   private async resolveMetadataPromises(metadata: any): Promise<any> {
     const resolved = { ...metadata }
+    const validator = getGlobalValidator()
 
-    // Resolve response promises
+    // Convert raw response metadata to OpenAPI format
     if (resolved.responses) {
       const responseEntries = Object.entries(resolved.responses)
       const resolvedResponses: Record<string, any> = {}
 
       for (const [status, responseData] of responseEntries) {
-        if (responseData && typeof (responseData as any).then === 'function') {
-          // It's a promise, resolve it
+        if (this.isRawMetadata(responseData)) {
+          // Convert raw schema to OpenAPI response format
+          const raw = responseData as any
+          const responseSchema = raw.schema
+            ? await createResponseSchema(raw.schema, validator)
+            : undefined
+
+          resolvedResponses[status] = {
+            description: raw.description,
+            ...responseSchema,
+          }
+        } else if (responseData && typeof (responseData as any).then === 'function') {
+          // Legacy: handle promises (backward compatibility)
           resolvedResponses[status] = await (responseData as Promise<any>)
         } else {
           resolvedResponses[status] = responseData
@@ -666,17 +691,42 @@ export class RouteParser {
       resolved.responses = resolvedResponses
     }
 
-    // Resolve request body promise
-    if (resolved.requestBody && typeof (resolved.requestBody as any).then === 'function') {
-      resolved.requestBody = await (resolved.requestBody as Promise<any>)
+    // Convert raw request body metadata to OpenAPI format
+    if (resolved.requestBody) {
+      if (this.isRawMetadata(resolved.requestBody)) {
+        const raw = resolved.requestBody as any
+        const bodySchema = await createRequestBodySchema(raw.schema, validator, raw.contentType)
+
+        resolved.requestBody = {
+          description: raw.description,
+          required: raw.required,
+          ...bodySchema,
+        }
+      } else if (typeof (resolved.requestBody as any).then === 'function') {
+        // Legacy: handle promises (backward compatibility)
+        resolved.requestBody = await (resolved.requestBody as Promise<any>)
+      }
     }
 
-    // Resolve parameter promises
+    // Convert raw parameter metadata to OpenAPI format
     if (resolved.parameters && Array.isArray(resolved.parameters)) {
       const resolvedParameters = []
 
       for (const param of resolved.parameters) {
-        if (param && typeof (param as any).then === 'function') {
+        if (this.isRawMetadata(param)) {
+          // Convert raw schema to OpenAPI parameter format
+          const raw = param as any
+          const convertedSchema = await convertToJsonSchema(raw.schema, validator)
+
+          resolvedParameters.push({
+            name: raw.name,
+            in: raw.in,
+            required: raw.required,
+            schema: convertedSchema,
+            description: raw.description,
+          })
+        } else if (param && typeof (param as any).then === 'function') {
+          // Legacy: handle promises (backward compatibility)
           resolvedParameters.push(await (param as Promise<any>))
         } else {
           resolvedParameters.push(param)

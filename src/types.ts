@@ -416,3 +416,39 @@ export interface SwaggerMetadata {
   security?: Array<Record<string, string[]>>
   deprecated?: boolean
 }
+
+/**
+ * Raw response data stored by decorators (before schema conversion)
+ * Schema conversion is deferred until spec generation to avoid circular dependencies
+ */
+export interface RawResponseData {
+  [rawMetadataMarker: symbol]: true
+  description: string
+  schema?: SchemaInput
+  contentType?: string
+}
+
+/**
+ * Raw request body data stored by decorators (before schema conversion)
+ * Schema conversion is deferred until spec generation to avoid circular dependencies
+ */
+export interface RawRequestBodyData {
+  [rawMetadataMarker: symbol]: true
+  description: string
+  schema: SchemaInput
+  required: boolean
+  contentType: string
+}
+
+/**
+ * Raw parameter data stored by decorators (before schema conversion)
+ * Schema conversion is deferred until spec generation to avoid circular dependencies
+ */
+export interface RawParameterData {
+  [rawMetadataMarker: symbol]: true
+  name: string
+  in: 'query' | 'path' | 'header'
+  required: boolean
+  schema: SchemaInput
+  description?: string
+}
