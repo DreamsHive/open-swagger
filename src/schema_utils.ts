@@ -1,4 +1,5 @@
-import type { SchemaInput, SchemaValidator } from './types.js'
+import type { SchemaInput, SchemaValidator, RequestBodyContentType } from './types.js'
+import { isFileSchema, toOpenAPIFileSchema, FILE_SCHEMA_SYMBOL } from './file_helpers.js'
 
 /**
  * Clean up Zod-generated JSON Schema by removing complex regex patterns
@@ -470,11 +471,89 @@ export async function createResponseSchema(
 }
 
 /**
+ * Process schema to convert file helper schemas to proper OpenAPI format
+ */
+function processSchemaForFiles(schema: any): any {
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
+  // Check if this is a file schema
+  if (isFileSchema(schema)) {
+    return toOpenAPIFileSchema(schema)
+  }
+
+  // Process object properties
+  if (schema.properties && typeof schema.properties === 'object') {
+    const processedProperties: Record<string, any> = {}
+
+    for (const [key, value] of Object.entries(schema.properties)) {
+      processedProperties[key] = processSchemaForFiles(value)
+    }
+
+    return {
+      ...schema,
+      properties: processedProperties,
+    }
+  }
+
+  // Process array items
+  if (schema.items) {
+    return {
+      ...schema,
+      items: processSchemaForFiles(schema.items),
+    }
+  }
+
+  return schema
+}
+
+/**
+ * Check if a schema contains file fields (recursively)
+ */
+function schemaContainsFiles(schema: any): boolean {
+  if (!schema || typeof schema !== 'object') {
+    return false
+  }
+
+  // Check if this is a file schema
+  if (schema[FILE_SCHEMA_SYMBOL] === true) {
+    return true
+  }
+
+  // Check format: binary
+  if (schema.type === 'string' && schema.format === 'binary') {
+    return true
+  }
+
+  // Check array of binary strings
+  if (
+    schema.type === 'array' &&
+    schema.items?.type === 'string' &&
+    schema.items?.format === 'binary'
+  ) {
+    return true
+  }
+
+  // Check object properties recursively
+  if (schema.properties && typeof schema.properties === 'object') {
+    for (const value of Object.values(schema.properties)) {
+      if (schemaContainsFiles(value)) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+/**
  * Utility to create a request body schema with proper content type wrapper
  */
 export async function createRequestBodySchema(
   schema: SchemaInput,
-  validator?: SchemaValidator
+  validator?: SchemaValidator,
+  contentType: RequestBodyContentType = 'application/json'
 ): Promise<any> {
   if (!schema) {
     return undefined
@@ -482,13 +561,52 @@ export async function createRequestBodySchema(
 
   const jsonSchema = await convertToJsonSchema(schema, validator)
 
+  // Process the schema to convert file helpers to proper OpenAPI format
+  const processedSchema = processSchemaForFiles(jsonSchema)
+
+  // If contentType is multipart/form-data, only use that content type
+  if (contentType === 'multipart/form-data') {
+    return {
+      content: {
+        'multipart/form-data': {
+          schema: processedSchema,
+        },
+      },
+    }
+  }
+
+  // If contentType is application/x-www-form-urlencoded, only use that content type
+  if (contentType === 'application/x-www-form-urlencoded') {
+    return {
+      content: {
+        'application/x-www-form-urlencoded': {
+          schema: processedSchema,
+        },
+      },
+    }
+  }
+
+  // Default: application/json with form-urlencoded fallback (legacy behavior)
+  // But if schema contains files, suggest using multipart/form-data
+  if (schemaContainsFiles(processedSchema)) {
+    // If files are detected but contentType is still application/json,
+    // automatically switch to multipart/form-data for better DX
+    return {
+      content: {
+        'multipart/form-data': {
+          schema: processedSchema,
+        },
+      },
+    }
+  }
+
   return {
     content: {
       'application/json': {
-        schema: jsonSchema,
+        schema: processedSchema,
       },
       'application/x-www-form-urlencoded': {
-        schema: jsonSchema,
+        schema: processedSchema,
       },
     },
   }
