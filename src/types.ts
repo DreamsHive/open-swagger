@@ -4,6 +4,53 @@
 export type SchemaValidator = 'typebox' | 'zod' | 'vinejs'
 
 /**
+ * Supported content types for request body
+ */
+export type RequestBodyContentType =
+  | 'application/json'
+  | 'multipart/form-data'
+  | 'application/x-www-form-urlencoded'
+
+/**
+ * Options for file schema helpers
+ */
+export interface FileOptions {
+  /**
+   * Description of the file field
+   */
+  description?: string
+  /**
+   * Whether the field accepts multiple files
+   * @default false
+   */
+  multiple?: boolean
+  /**
+   * Minimum number of files (only applicable when multiple: true)
+   */
+  minItems?: number
+  /**
+   * Maximum number of files (only applicable when multiple: true)
+   */
+  maxItems?: number
+}
+
+/**
+ * Options for @SwaggerRequestBody decorator
+ */
+export interface SwaggerRequestBodyOptions {
+  /**
+   * Whether the request body is required
+   * @default true
+   */
+  required?: boolean
+  /**
+   * Content type for the request body
+   * @default 'application/json'
+   */
+  contentType?: RequestBodyContentType
+}
+
+/**
  * API Key security scheme (for header, query, or cookie authentication)
  */
 export interface ApiKeySecurityScheme {
