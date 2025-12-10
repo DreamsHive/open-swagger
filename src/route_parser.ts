@@ -142,6 +142,19 @@ export class RouteParser {
   }
 
   /**
+   * Extract method name from AdonisJS reference string
+   * e.g., '#controllers/users_controller.index' -> 'index'
+   * e.g., '#controllers/users_controller' -> 'handle' (single action controller)
+   */
+  private extractMethodNameFromReference(reference: string): string {
+    const parts = reference.split('.')
+    if (parts.length > 1) {
+      return parts[parts.length - 1]
+    }
+    return 'handle' // Single action controller
+  }
+
+  /**
    * Extract handler information from route
    */
   private extractHandler(route: any): string {
@@ -212,14 +225,27 @@ export class RouteParser {
         }
       }
 
-      // Handle object handlers for single action controllers
+      // Handle object handlers for AdonisJS v6 lazy-loaded controllers
+      // Structure: { reference: '#controllers/users_controller.index', name: '...', handle: Function }
       if (typeof route.handler === 'object' && route.handler.reference && route.handler.handle) {
-        const [controllerModule] = route.handler.reference
+        const reference = route.handler.reference
 
-        return {
-          handler: `Array[${controllerModule.name}, handle]`,
-          importFunction: controllerModule,
-          methodName: 'handle',
+        // Reference is a string like '#controllers/users_controller.index'
+        if (typeof reference === 'string') {
+          return {
+            handler: reference,
+            methodName: this.extractMethodNameFromReference(reference),
+          }
+        }
+
+        // Reference is an array like [importFunction] (single action controller)
+        if (Array.isArray(reference) && reference.length > 0) {
+          const [controllerModule] = reference
+          return {
+            handler: `Array[${controllerModule?.name || 'Controller'}, handle]`,
+            importFunction: controllerModule,
+            methodName: 'handle',
+          }
         }
       }
     }
