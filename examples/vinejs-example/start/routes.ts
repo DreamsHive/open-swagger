@@ -27,5 +27,9 @@ router
     router.post('/users', '#controllers/users_controller.store')
     router.put('/users/:id', '#controllers/users_controller.update')
     router.delete('/users/:id', '#controllers/users_controller.destroy')
+
+    // File upload routes (new feature)
+    router.post('/files/upload', '#controllers/files_controller.upload')
+    router.post('/files/upload-multiple', '#controllers/files_controller.uploadMultiple')
   })
   .prefix('/api/v1')
