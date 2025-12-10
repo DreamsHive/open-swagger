@@ -1,5 +1,11 @@
 import 'reflect-metadata'
-import type { SwaggerMetadata, SchemaInput, SchemaValidator } from './types.js'
+import type {
+  SwaggerMetadata,
+  SchemaInput,
+  SchemaValidator,
+  SwaggerRequestBodyOptions,
+  RequestBodyContentType,
+} from './types.js'
 import {
   convertToJsonSchema,
   createResponseSchema,
@@ -87,16 +93,41 @@ export function SwaggerResponse(status: number, description: string, schema?: Sc
 
 /**
  * Swagger request body decorator
+ *
+ * @example Basic usage (backward compatible)
+ * ```typescript
+ * @SwaggerRequestBody("User data", userSchema)
+ * @SwaggerRequestBody("User data", userSchema, true)
+ * ```
+ *
+ * @example With options object (new API)
+ * ```typescript
+ * @SwaggerRequestBody("User data", userSchema, { required: true })
+ * @SwaggerRequestBody("File upload", fileSchema, { contentType: "multipart/form-data" })
+ * ```
  */
 export function SwaggerRequestBody(
   description: string,
   schema: SchemaInput,
-  required: boolean = true
+  options?: boolean | SwaggerRequestBodyOptions
 ) {
   return function (target: any, propertyKey: string, _descriptor: PropertyDescriptor) {
+    // Handle backward compatibility: options can be boolean (legacy) or object (new)
+    let required = true
+    let contentType: RequestBodyContentType = 'application/json'
+
+    if (typeof options === 'boolean') {
+      // Legacy API: third parameter is required boolean
+      required = options
+    } else if (options && typeof options === 'object') {
+      // New API: third parameter is options object
+      required = options.required !== false // Default to true
+      contentType = options.contentType || 'application/json'
+    }
+
     // Convert schema asynchronously and store the promise
     const requestBodyPromise = (async () => {
-      const bodySchema = await createRequestBodySchema(schema, getGlobalValidator())
+      const bodySchema = await createRequestBodySchema(schema, getGlobalValidator(), contentType)
 
       return {
         description,

@@ -365,4 +365,264 @@ test.group('Swagger Decorators', () => {
     assert.isTrue(metadataDeprecated?.deprecated)
     assert.isFalse(metadataNotDeprecated?.deprecated)
   })
+
+  test('should handle SwaggerRequestBody with contentType option (multipart/form-data)', async ({
+    assert,
+  }) => {
+    const { SwaggerRequestBody, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class FileUploadTestController {
+      @SwaggerRequestBody(
+        'File upload',
+        {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            file: { type: 'string', format: 'binary' },
+          },
+        },
+        { contentType: 'multipart/form-data' }
+      )
+      testMethodWithFileUpload() {
+        return 'test'
+      }
+    }
+
+    const rawMetadata = getSwaggerMetadata(
+      FileUploadTestController.prototype,
+      'testMethodWithFileUpload'
+    )
+    const metadata = await resolveMetadataPromises(rawMetadata)
+
+    assert.isObject(metadata?.requestBody)
+    assert.equal(metadata?.requestBody.description, 'File upload')
+    assert.isTrue(metadata?.requestBody.required)
+    assert.property(metadata?.requestBody.content, 'multipart/form-data')
+    assert.notProperty(metadata?.requestBody.content, 'application/json')
+  })
+
+  test('should handle SwaggerRequestBody with legacy boolean required=false parameter', async ({
+    assert,
+  }) => {
+    const { SwaggerRequestBody, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class LegacyRequestBodyTestController {
+      @SwaggerRequestBody(
+        'User data',
+        {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        false // Legacy: required = false
+      )
+      testMethodLegacy() {
+        return 'test'
+      }
+    }
+
+    const rawMetadata = getSwaggerMetadata(
+      LegacyRequestBodyTestController.prototype,
+      'testMethodLegacy'
+    )
+    const metadata = await resolveMetadataPromises(rawMetadata)
+
+    assert.isObject(metadata?.requestBody)
+    assert.isFalse(metadata?.requestBody.required)
+    assert.property(metadata?.requestBody.content, 'application/json')
+  })
+
+  test('should handle SwaggerRequestBody with legacy boolean required=true parameter', async ({
+    assert,
+  }) => {
+    const { SwaggerRequestBody, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class LegacyBooleanTrueTestController {
+      @SwaggerRequestBody(
+        'User data',
+        {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        true // Legacy: required = true
+      )
+      testMethodLegacyTrue() {
+        return 'test'
+      }
+    }
+
+    const rawMetadata = getSwaggerMetadata(
+      LegacyBooleanTrueTestController.prototype,
+      'testMethodLegacyTrue'
+    )
+    const metadata = await resolveMetadataPromises(rawMetadata)
+
+    assert.isObject(metadata?.requestBody)
+    assert.isTrue(metadata?.requestBody.required)
+    assert.property(metadata?.requestBody.content, 'application/json')
+  })
+
+  test('should handle SwaggerRequestBody with required: false in options', async ({ assert }) => {
+    const { SwaggerRequestBody, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class OptionalRequestBodyTestController {
+      @SwaggerRequestBody(
+        'Optional data',
+        {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        { required: false, contentType: 'application/json' }
+      )
+      testMethodOptional() {
+        return 'test'
+      }
+    }
+
+    const rawMetadata = getSwaggerMetadata(
+      OptionalRequestBodyTestController.prototype,
+      'testMethodOptional'
+    )
+    const metadata = await resolveMetadataPromises(rawMetadata)
+
+    assert.isObject(metadata?.requestBody)
+    assert.isFalse(metadata?.requestBody.required)
+  })
+
+  test('should handle SwaggerRequestBody with application/x-www-form-urlencoded', async ({
+    assert,
+  }) => {
+    const { SwaggerRequestBody, getSwaggerMetadata } = await import('../src/decorators.js')
+
+    class FormUrlEncodedTestController {
+      @SwaggerRequestBody(
+        'Form data',
+        {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            password: { type: 'string' },
+          },
+        },
+        { contentType: 'application/x-www-form-urlencoded' }
+      )
+      testMethodFormUrlEncoded() {
+        return 'test'
+      }
+    }
+
+    const rawMetadata = getSwaggerMetadata(
+      FormUrlEncodedTestController.prototype,
+      'testMethodFormUrlEncoded'
+    )
+    const metadata = await resolveMetadataPromises(rawMetadata)
+
+    assert.isObject(metadata?.requestBody)
+    assert.property(metadata?.requestBody.content, 'application/x-www-form-urlencoded')
+    assert.notProperty(metadata?.requestBody.content, 'application/json')
+    assert.notProperty(metadata?.requestBody.content, 'multipart/form-data')
+  })
+})
+
+test.group('File Helpers', () => {
+  test('openapiFile should create single file schema', async ({ assert }) => {
+    const { openapiFile } = await import('../src/file_helpers.js')
+
+    const schema = openapiFile({ description: 'CSV file with customers' })
+
+    assert.equal(schema.type, 'string')
+    assert.equal(schema.format, 'binary')
+    assert.equal(schema.description, 'CSV file with customers')
+  })
+
+  test('openapiFile should create multiple files schema', async ({ assert }) => {
+    const { openapiFile } = await import('../src/file_helpers.js')
+
+    const schema = openapiFile({ description: 'Attachment files', multiple: true })
+
+    assert.equal(schema.type, 'array')
+    assert.deepEqual(schema.items, { type: 'string', format: 'binary' })
+    assert.equal(schema.description, 'Attachment files')
+  })
+
+  test('openapiFile should support minItems and maxItems for multiple files', async ({
+    assert,
+  }) => {
+    const { openapiFile } = await import('../src/file_helpers.js')
+
+    const schema = openapiFile({
+      description: 'Gallery images',
+      multiple: true,
+      minItems: 2,
+      maxItems: 10,
+    })
+
+    assert.equal(schema.type, 'array')
+    assert.equal(schema.minItems, 2)
+    assert.equal(schema.maxItems, 10)
+  })
+
+  test('vineFile should be an alias for openapiFile', async ({ assert }) => {
+    const { vineFile, openapiFile } = await import('../src/file_helpers.js')
+
+    const vineSchema = vineFile({ description: 'Test file' })
+    const openapiSchema = openapiFile({ description: 'Test file' })
+
+    assert.equal(vineSchema.type, openapiSchema.type)
+    assert.equal(vineSchema.format, openapiSchema.format)
+    assert.equal(vineSchema.description, openapiSchema.description)
+  })
+
+  test('typeboxFile should be an alias for openapiFile', async ({ assert }) => {
+    const { typeboxFile, openapiFile } = await import('../src/file_helpers.js')
+
+    const typeboxSchema = typeboxFile({ description: 'Test file' })
+    const openapiSchema = openapiFile({ description: 'Test file' })
+
+    assert.equal(typeboxSchema.type, openapiSchema.type)
+    assert.equal(typeboxSchema.format, openapiSchema.format)
+  })
+
+  test('zodFile should be an alias for openapiFile', async ({ assert }) => {
+    const { zodFile, openapiFile } = await import('../src/file_helpers.js')
+
+    const zodSchema = zodFile({ description: 'Test file' })
+    const openapiSchema = openapiFile({ description: 'Test file' })
+
+    assert.equal(zodSchema.type, openapiSchema.type)
+    assert.equal(zodSchema.format, openapiSchema.format)
+  })
+
+  test('isFileSchema should correctly identify file schemas', async ({ assert }) => {
+    const { openapiFile, isFileSchema } = await import('../src/file_helpers.js')
+
+    const fileSchema = openapiFile({ description: 'Test file' })
+    const regularSchema = { type: 'string' }
+
+    assert.isTrue(isFileSchema(fileSchema))
+    assert.isFalse(isFileSchema(regularSchema))
+    // isFileSchema returns false for null/undefined
+    assert.equal(isFileSchema(null), false)
+    assert.equal(isFileSchema(undefined), false)
+  })
+
+  test('toOpenAPIFileSchema should remove internal marker', async ({ assert }) => {
+    const { openapiFile, toOpenAPIFileSchema, FILE_SCHEMA_SYMBOL } = await import(
+      '../src/file_helpers.js'
+    )
+
+    const fileSchema = openapiFile({ description: 'Test file' })
+    const cleanSchema = toOpenAPIFileSchema(fileSchema)
+
+    assert.equal(cleanSchema.type, 'string')
+    assert.equal(cleanSchema.format, 'binary')
+    assert.equal(cleanSchema.description, 'Test file')
+    // Check that the symbol is not present in the clean schema
+    assert.isUndefined(cleanSchema[FILE_SCHEMA_SYMBOL])
+  })
 })

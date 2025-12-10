@@ -335,7 +335,7 @@ All decorators support TypeBox schemas, Zod schemas, VineJS schemas, and raw JSO
 - `@SwaggerParam(options, schema, required?)` - **Enhanced parameter decorator for query/path** ⭐
 - `@SwaggerHeader(options, schema, required?)` - **Header parameter decorator** ⭐
 - `@SwaggerResponse(status, description, schema?)` - Define response (supports TypeBox/Zod/VineJS/JSON Schema)
-- `@SwaggerRequestBody(description, schema, required?)` - Define request body (supports TypeBox/Zod/VineJS/JSON Schema)
+- `@SwaggerRequestBody(description, schema, options?)` - Define request body with optional `contentType` for file uploads (supports TypeBox/Zod/VineJS/JSON Schema)
 - `@SwaggerDeprecated(deprecated?)` - Mark as deprecated
 - `@SwaggerSecurity(security)` - Define security requirements
 - `@Swagger(options)` - Combined decorator for common options
@@ -371,6 +371,102 @@ You can use any of these schema formats (install the corresponding packages as n
     name: { type: 'string' }
   }
 })
+```
+
+### File Upload Support
+
+The `@SwaggerRequestBody` decorator supports file uploads via the `contentType` option and file helper functions:
+
+```typescript
+import {
+  SwaggerRequestBody,
+  SwaggerInfo,
+  openapiFile,
+  vineFile, // Alias for VineJS users
+  typeboxFile, // Alias for TypeBox users
+  zodFile, // Alias for Zod users
+} from 'adonis-open-swagger'
+import vine from '@vinejs/vine'
+
+export default class CampaignsController {
+  @SwaggerInfo({
+    tags: ['Campaigns'],
+    summary: 'Create campaign with file upload',
+    description: 'Upload a CSV file with customer data',
+  })
+  @SwaggerRequestBody(
+    'Campaign data with file',
+    vine.object({
+      name: vine.string(),
+      file: vineFile({ description: 'CSV file with customers' }),
+    }),
+    { contentType: 'multipart/form-data' }
+  )
+  async store({ request }: HttpContext) {
+    // Handle file upload
+  }
+}
+```
+
+#### File Helper Functions
+
+| Function                | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| `openapiFile(options?)` | Generic file schema (works with any validator) |
+| `vineFile(options?)`    | Alias for VineJS users                         |
+| `typeboxFile(options?)` | Alias for TypeBox users                        |
+| `zodFile(options?)`     | Alias for Zod users                            |
+
+#### FileOptions
+
+```typescript
+interface FileOptions {
+  description?: string // Description of the file field
+  multiple?: boolean // Accept multiple files (default: false)
+  minItems?: number // Min files (only when multiple: true)
+  maxItems?: number // Max files (only when multiple: true)
+}
+```
+
+#### Examples
+
+```typescript
+// Single file upload
+openapiFile({ description: 'Profile picture' })
+// Generates: { type: "string", format: "binary" }
+
+// Multiple files upload
+openapiFile({
+  description: 'Gallery images',
+  multiple: true,
+  minItems: 1,
+  maxItems: 10,
+})
+// Generates: { type: "array", items: { type: "string", format: "binary" }, minItems: 1, maxItems: 10 }
+```
+
+#### Content Types
+
+The `@SwaggerRequestBody` decorator supports three content types:
+
+| Content Type                        | Use Case                    |
+| ----------------------------------- | --------------------------- |
+| `application/json`                  | Default for JSON payloads   |
+| `multipart/form-data`               | File uploads and mixed data |
+| `application/x-www-form-urlencoded` | Form submissions            |
+
+```typescript
+// JSON (default)
+@SwaggerRequestBody('User data', userSchema)
+
+// File upload
+@SwaggerRequestBody('File upload', fileSchema, { contentType: 'multipart/form-data' })
+
+// Form data
+@SwaggerRequestBody('Form data', formSchema, { contentType: 'application/x-www-form-urlencoded' })
+
+// Optional request body
+@SwaggerRequestBody('Optional data', schema, { required: false })
 ```
 
 ## CLI Commands
