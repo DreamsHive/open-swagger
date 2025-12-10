@@ -6,11 +6,10 @@ import type {
   SwaggerRequestBodyOptions,
   RequestBodyContentType,
 } from './types.js'
-import {
-  convertToJsonSchema,
-  createResponseSchema,
-  createRequestBodySchema,
-} from './schema_utils.js'
+
+// Symbol to mark raw (unconverted) metadata - prevents circular dependency
+// by deferring schema conversion until spec generation time
+export const RAW_METADATA_MARKER = Symbol.for('open-swagger:raw-metadata')
 
 /**
  * Global configuration for schema validation
@@ -66,26 +65,21 @@ export function setSwaggerMetadata(
 
 /**
  * Swagger response decorator
+ * Stores raw schema data to avoid circular dependencies during module initialization.
+ * Schema conversion is deferred until spec generation time.
  */
 export function SwaggerResponse(status: number, description: string, schema?: SchemaInput) {
   return function (target: any, propertyKey: string, _descriptor: PropertyDescriptor) {
     const existing = getSwaggerMetadata(target, propertyKey)
     const responses = existing?.responses || {}
 
-    // Convert schema asynchronously and store the promise
-    const responsePromise = (async () => {
-      const responseSchema = schema
-        ? await createResponseSchema(schema, getGlobalValidator())
-        : undefined
-
-      return {
-        description,
-        ...responseSchema,
-      }
-    })()
-
-    // Store the promise in responses - we'll resolve this later during spec generation
-    responses[status.toString()] = responsePromise
+    // Store raw schema data with marker - conversion happens at spec generation time
+    // This prevents circular dependency errors from dynamic imports during class decoration
+    responses[status.toString()] = {
+      [RAW_METADATA_MARKER]: true,
+      description,
+      schema,
+    }
 
     setSwaggerMetadata(target, propertyKey, { responses })
   }
@@ -93,6 +87,8 @@ export function SwaggerResponse(status: number, description: string, schema?: Sc
 
 /**
  * Swagger request body decorator
+ * Stores raw schema data to avoid circular dependencies during module initialization.
+ * Schema conversion is deferred until spec generation time.
  *
  * @example Basic usage (backward compatible)
  * ```typescript
@@ -125,23 +121,24 @@ export function SwaggerRequestBody(
       contentType = options.contentType || 'application/json'
     }
 
-    // Convert schema asynchronously and store the promise
-    const requestBodyPromise = (async () => {
-      const bodySchema = await createRequestBodySchema(schema, getGlobalValidator(), contentType)
-
-      return {
+    // Store raw schema data with marker - conversion happens at spec generation time
+    // This prevents circular dependency errors from dynamic imports during class decoration
+    setSwaggerMetadata(target, propertyKey, {
+      requestBody: {
+        [RAW_METADATA_MARKER]: true,
         description,
+        schema,
         required,
-        ...bodySchema,
-      }
-    })()
-
-    setSwaggerMetadata(target, propertyKey, { requestBody: requestBodyPromise })
+        contentType,
+      },
+    })
   }
 }
 
 /**
  * Enhanced swagger parameter decorator with improved API
+ * Stores raw schema data to avoid circular dependencies during module initialization.
+ * Schema conversion is deferred until spec generation time.
  */
 export function SwaggerParam(
   options: {
@@ -156,20 +153,16 @@ export function SwaggerParam(
     const existing = getSwaggerMetadata(target, propertyKey)
     const parameters = existing?.parameters || []
 
-    // Convert schema asynchronously and store the promise
-    const parameterPromise = (async () => {
-      const convertedSchema = await convertToJsonSchema(schema, getGlobalValidator())
-
-      return {
-        name: options.name,
-        in: options.location,
-        required,
-        schema: convertedSchema,
-        description: options.description,
-      }
-    })()
-
-    parameters.push(parameterPromise)
+    // Store raw schema data with marker - conversion happens at spec generation time
+    // This prevents circular dependency errors from dynamic imports during class decoration
+    parameters.push({
+      [RAW_METADATA_MARKER]: true,
+      name: options.name,
+      in: options.location,
+      required,
+      schema,
+      description: options.description,
+    })
 
     setSwaggerMetadata(target, propertyKey, { parameters })
   }
@@ -177,6 +170,8 @@ export function SwaggerParam(
 
 /**
  * Swagger header parameter decorator
+ * Stores raw schema data to avoid circular dependencies during module initialization.
+ * Schema conversion is deferred until spec generation time.
  */
 export function SwaggerHeader(
   options: {
@@ -190,20 +185,16 @@ export function SwaggerHeader(
     const existing = getSwaggerMetadata(target, propertyKey)
     const parameters = existing?.parameters || []
 
-    // Convert schema asynchronously and store the promise
-    const parameterPromise = (async () => {
-      const convertedSchema = await convertToJsonSchema(schema, getGlobalValidator())
-
-      return {
-        name: options.name,
-        in: 'header',
-        required,
-        schema: convertedSchema,
-        description: options.description,
-      }
-    })()
-
-    parameters.push(parameterPromise)
+    // Store raw schema data with marker - conversion happens at spec generation time
+    // This prevents circular dependency errors from dynamic imports during class decoration
+    parameters.push({
+      [RAW_METADATA_MARKER]: true,
+      name: options.name,
+      in: 'header' as const,
+      required,
+      schema,
+      description: options.description,
+    })
 
     setSwaggerMetadata(target, propertyKey, { parameters })
   }
@@ -211,6 +202,8 @@ export function SwaggerHeader(
 
 /**
  * Swagger parameter decorator (legacy - kept for backward compatibility)
+ * Stores raw schema data to avoid circular dependencies during module initialization.
+ * Schema conversion is deferred until spec generation time.
  */
 export function SwaggerParameter(
   name: string,
@@ -223,20 +216,16 @@ export function SwaggerParameter(
     const existing = getSwaggerMetadata(target, propertyKey)
     const parameters = existing?.parameters || []
 
-    // Convert schema asynchronously and store the promise
-    const parameterPromise = (async () => {
-      const convertedSchema = await convertToJsonSchema(schema, getGlobalValidator())
-
-      return {
-        name,
-        in: location,
-        required,
-        schema: convertedSchema,
-        description,
-      }
-    })()
-
-    parameters.push(parameterPromise)
+    // Store raw schema data with marker - conversion happens at spec generation time
+    // This prevents circular dependency errors from dynamic imports during class decoration
+    parameters.push({
+      [RAW_METADATA_MARKER]: true,
+      name,
+      in: location,
+      required,
+      schema,
+      description,
+    })
 
     setSwaggerMetadata(target, propertyKey, { parameters })
   }
