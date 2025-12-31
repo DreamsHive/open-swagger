@@ -1,4 +1,10 @@
-import type { SchemaInput, SchemaValidator } from './types.js'
+import type { SchemaInput, SchemaValidator, RequestBodyContentType } from './types.js'
+import {
+  isFileSchema,
+  isVineFileSchema,
+  toOpenAPIFileSchema,
+  FILE_SCHEMA_SYMBOL,
+} from './file_helpers.js'
 
 /**
  * Clean up Zod-generated JSON Schema by removing complex regex patterns
@@ -96,6 +102,44 @@ function fixNullableFieldsInSchema(schema: any): any {
 }
 
 /**
+ * Extract file schemas from Zod object schema and create a clean schema without them
+ * Zod v4 stores object properties in the `shape` property
+ */
+function extractZodFileSchemas(
+  zodSchema: any,
+  z: any
+): { schema: any; fileSchemas: Map<string, any> } {
+  const fileSchemas = new Map<string, any>()
+
+  // Only process Zod object schemas with shape property
+  if (!zodSchema || typeof zodSchema !== 'object' || !zodSchema.shape) {
+    return { schema: zodSchema, fileSchemas }
+  }
+
+  // Find file schemas in shape
+  for (const [key, value] of Object.entries(zodSchema.shape)) {
+    if (isFileSchema(value)) {
+      fileSchemas.set(key, toOpenAPIFileSchema(value as any))
+    }
+  }
+
+  // If we found file schemas, create new Zod object without them
+  if (fileSchemas.size > 0) {
+    const newShape: Record<string, any> = {}
+    for (const [key, value] of Object.entries(zodSchema.shape)) {
+      if (!isFileSchema(value)) {
+        newShape[key] = value
+      }
+    }
+
+    // Create new Zod object with cleaned shape
+    return { schema: z.object(newShape), fileSchemas }
+  }
+
+  return { schema: zodSchema, fileSchemas }
+}
+
+/**
  * Convert Zod schema to JSON Schema using Zod v4's built-in conversion
  */
 async function zodToJsonSchema(zodSchema: any): Promise<any> {
@@ -103,7 +147,11 @@ async function zodToJsonSchema(zodSchema: any): Promise<any> {
     // Use Zod v4's built-in z.toJSONSchema function with OpenAPI target
     const { z } = await import('zod')
     if (typeof z.toJSONSchema === 'function') {
-      const rawSchema = z.toJSONSchema(zodSchema, {
+      // Step 0: Extract file schemas (they're not valid Zod types)
+      const { schema: cleanedZodSchema, fileSchemas } = extractZodFileSchemas(zodSchema, z)
+
+      // Step 1: Convert Zod schema to JSON Schema
+      const rawSchema = z.toJSONSchema(cleanedZodSchema, {
         target: 'openapi-3.0', // Use OpenAPI format for cleaner schemas
       })
 
@@ -111,7 +159,10 @@ async function zodToJsonSchema(zodSchema: any): Promise<any> {
       const cleanedSchema = cleanZodJsonSchema(rawSchema)
 
       // Fix nullable fields in required array
-      return fixNullableFieldsInSchema(cleanedSchema)
+      const fixedSchema = fixNullableFieldsInSchema(cleanedSchema)
+
+      // Step 2: Merge file schemas back
+      return mergeFileSchemas(fixedSchema, fileSchemas)
     }
 
     // Fallback if toJSONSchema is not available (older Zod version)
@@ -128,13 +179,56 @@ async function zodToJsonSchema(zodSchema: any): Promise<any> {
 }
 
 /**
+ * Clean TypeBox schema by processing file schemas and removing internal markers
+ */
+function cleanTypeBoxFileSchemas(schema: any): any {
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
+  // Create a copy to avoid mutating the original
+  const cleaned: Record<string, any> = {}
+
+  for (const [key, value] of Object.entries(schema)) {
+    // Skip Symbol keys (internal markers)
+    if (typeof key === 'symbol') continue
+
+    if (key === 'properties' && typeof value === 'object' && value !== null) {
+      // Process nested properties - clean up file schema markers
+      cleaned[key] = {}
+      for (const [propName, propValue] of Object.entries(value)) {
+        if (isFileSchema(propValue)) {
+          // Convert file schema to clean OpenAPI format
+          cleaned[key][propName] = toOpenAPIFileSchema(propValue as any)
+        } else if (typeof propValue === 'object' && propValue !== null) {
+          // Recursively clean nested objects
+          cleaned[key][propName] = cleanTypeBoxFileSchemas(propValue)
+        } else {
+          cleaned[key][propName] = propValue
+        }
+      }
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      // Recursively clean nested objects
+      cleaned[key] = cleanTypeBoxFileSchemas(value)
+    } else {
+      cleaned[key] = value
+    }
+  }
+
+  return cleaned
+}
+
+/**
  * Convert TypeBox schema to JSON Schema
  */
 function typeBoxToJsonSchema(typeBoxSchema: any): any {
   try {
     // TypeBox schemas are already JSON Schema compatible
-    // But we need to fix nullable field handling in required arrays
-    return fixTypeBoxNullableFields(typeBoxSchema)
+    // Clean up file schema markers first
+    const cleanedSchema = cleanTypeBoxFileSchemas(typeBoxSchema)
+
+    // Fix nullable field handling in required arrays
+    return fixTypeBoxNullableFields(cleanedSchema)
   } catch {
     return { type: 'object', description: 'TypeBox schema (conversion failed)' }
   }
@@ -197,21 +291,109 @@ function fixTypeBoxNullableFields(schema: any): any {
 }
 
 /**
+ * Extract file schemas from VineJS schema and create a modified schema with vine.any() placeholders
+ * This is necessary because vine.compile() requires all properties to have internal VineJS methods
+ */
+async function extractFileSchemas(
+  vineSchema: any,
+  vine: any
+): Promise<{
+  schema: any
+  fileSchemas: Map<string, any>
+}> {
+  const fileSchemas = new Map<string, any>()
+
+  // Only process object-type schemas
+  if (!vineSchema || typeof vineSchema !== 'object') {
+    return { schema: vineSchema, fileSchemas }
+  }
+
+  // Check if this is a vine.object() schema with getProperties method
+  if (typeof vineSchema.getProperties === 'function') {
+    try {
+      const properties = vineSchema.getProperties()
+
+      // Find file schemas and store them
+      for (const [key, value] of Object.entries(properties)) {
+        if (isVineFileSchema(value)) {
+          // Store the file schema for later merging
+          fileSchemas.set(key, toOpenAPIFileSchema(value as any))
+        }
+      }
+
+      // If we found file schemas, create a new schema without them
+      if (fileSchemas.size > 0) {
+        // Build a new object schema with only non-file properties
+        const newProps: Record<string, any> = {}
+        for (const [key, value] of Object.entries(properties)) {
+          if (!isVineFileSchema(value)) {
+            newProps[key] = value
+          }
+        }
+
+        // Create a new vine.object() with only the non-file properties
+        const newSchema = vine.object(newProps)
+
+        return { schema: newSchema, fileSchemas }
+      }
+    } catch {
+      // If getProperties fails, continue without extraction
+    }
+  }
+
+  // Return the original schema if no file schemas found
+  return { schema: vineSchema, fileSchemas }
+}
+
+/**
+ * Merge extracted file schemas back into the converted JSON Schema
+ */
+function mergeFileSchemas(jsonSchema: any, fileSchemas: Map<string, any>): any {
+  if (fileSchemas.size === 0) {
+    return jsonSchema
+  }
+
+  // Clone the schema
+  const result = { ...jsonSchema }
+
+  // Ensure properties object exists
+  if (!result.properties) {
+    result.properties = {}
+  }
+
+  // Add file schemas back to properties
+  for (const [fieldName, fileSchema] of fileSchemas) {
+    result.properties[fieldName] = fileSchema
+  }
+
+  return result
+}
+
+/**
  * Convert VineJS schema to JSON Schema
  */
 async function vineToJsonSchema(vineSchema: any): Promise<any> {
   try {
-    // Import VineJS dynamically
+    // Import VineJS dynamically (optional dependency)
     const vine = await import('@vinejs/vine')
 
-    // Step 1: Compile the VineJS schema
-    const compiledValidator = vine.default.compile(vineSchema)
+    // Step 0: Extract file schemas before compilation (they're not valid VineJS types)
+    const { schema: cleanedSchema, fileSchemas } = await extractFileSchemas(
+      vineSchema,
+      vine.default
+    )
+
+    // Step 1: Compile the VineJS schema (without file properties)
+    const compiledValidator = vine.default.compile(cleanedSchema)
 
     // Step 2: Extract schema and refs using toJSON()
     const vineJsonOutput = compiledValidator.toJSON()
 
     // Step 3: Convert VineJS format to JSON Schema format
-    return convertVineJSToJsonSchema(vineJsonOutput)
+    const jsonSchema = convertVineJSToJsonSchema(vineJsonOutput)
+
+    // Step 4: Merge file schemas back into the result
+    return mergeFileSchemas(jsonSchema, fileSchemas)
   } catch {
     // Silent error handling for now
     return { type: 'object', description: 'VineJS schema (conversion failed)' }
@@ -470,11 +652,89 @@ export async function createResponseSchema(
 }
 
 /**
+ * Process schema to convert file helper schemas to proper OpenAPI format
+ */
+function processSchemaForFiles(schema: any): any {
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
+  // Check if this is a file schema
+  if (isFileSchema(schema)) {
+    return toOpenAPIFileSchema(schema)
+  }
+
+  // Process object properties
+  if (schema.properties && typeof schema.properties === 'object') {
+    const processedProperties: Record<string, any> = {}
+
+    for (const [key, value] of Object.entries(schema.properties)) {
+      processedProperties[key] = processSchemaForFiles(value)
+    }
+
+    return {
+      ...schema,
+      properties: processedProperties,
+    }
+  }
+
+  // Process array items
+  if (schema.items) {
+    return {
+      ...schema,
+      items: processSchemaForFiles(schema.items),
+    }
+  }
+
+  return schema
+}
+
+/**
+ * Check if a schema contains file fields (recursively)
+ */
+function schemaContainsFiles(schema: any): boolean {
+  if (!schema || typeof schema !== 'object') {
+    return false
+  }
+
+  // Check if this is a file schema
+  if (schema[FILE_SCHEMA_SYMBOL] === true) {
+    return true
+  }
+
+  // Check format: binary
+  if (schema.type === 'string' && schema.format === 'binary') {
+    return true
+  }
+
+  // Check array of binary strings
+  if (
+    schema.type === 'array' &&
+    schema.items?.type === 'string' &&
+    schema.items?.format === 'binary'
+  ) {
+    return true
+  }
+
+  // Check object properties recursively
+  if (schema.properties && typeof schema.properties === 'object') {
+    for (const value of Object.values(schema.properties)) {
+      if (schemaContainsFiles(value)) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+/**
  * Utility to create a request body schema with proper content type wrapper
  */
 export async function createRequestBodySchema(
   schema: SchemaInput,
-  validator?: SchemaValidator
+  validator?: SchemaValidator,
+  contentType: RequestBodyContentType = 'application/json'
 ): Promise<any> {
   if (!schema) {
     return undefined
@@ -482,13 +742,52 @@ export async function createRequestBodySchema(
 
   const jsonSchema = await convertToJsonSchema(schema, validator)
 
+  // Process the schema to convert file helpers to proper OpenAPI format
+  const processedSchema = processSchemaForFiles(jsonSchema)
+
+  // If contentType is multipart/form-data, only use that content type
+  if (contentType === 'multipart/form-data') {
+    return {
+      content: {
+        'multipart/form-data': {
+          schema: processedSchema,
+        },
+      },
+    }
+  }
+
+  // If contentType is application/x-www-form-urlencoded, only use that content type
+  if (contentType === 'application/x-www-form-urlencoded') {
+    return {
+      content: {
+        'application/x-www-form-urlencoded': {
+          schema: processedSchema,
+        },
+      },
+    }
+  }
+
+  // Default: application/json with form-urlencoded fallback (legacy behavior)
+  // But if schema contains files, suggest using multipart/form-data
+  if (schemaContainsFiles(processedSchema)) {
+    // If files are detected but contentType is still application/json,
+    // automatically switch to multipart/form-data for better DX
+    return {
+      content: {
+        'multipart/form-data': {
+          schema: processedSchema,
+        },
+      },
+    }
+  }
+
   return {
     content: {
       'application/json': {
-        schema: jsonSchema,
+        schema: processedSchema,
       },
       'application/x-www-form-urlencoded': {
-        schema: jsonSchema,
+        schema: processedSchema,
       },
     },
   }

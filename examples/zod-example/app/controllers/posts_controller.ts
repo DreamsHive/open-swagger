@@ -1,6 +1,12 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { z } from 'zod'
-import { SwaggerInfo, SwaggerResponse, SwaggerRequestBody, SwaggerParam } from 'adonis-open-swagger'
+import {
+  SwaggerInfo,
+  SwaggerResponse,
+  SwaggerRequestBody,
+  SwaggerParam,
+  zodFile,
+} from 'adonis-open-swagger'
 
 // Zod schemas for validation and documentation
 const PostSchema = z.object({
@@ -297,5 +303,89 @@ export default class PostsController {
 
     // Mock post deletion
     return response.status(204).send('')
+  }
+
+  @SwaggerInfo({
+    tags: ['Posts'],
+    summary: 'Upload post image',
+    description: 'Upload an image for a blog post using Zod with zodFile helper',
+  })
+  @SwaggerParam(
+    {
+      name: 'id',
+      location: 'path',
+      description: 'Post ID',
+    },
+    z.number().int().positive(),
+    true
+  )
+  @SwaggerRequestBody(
+    'Post image upload',
+    z.object({
+      title: z.string().min(1).max(100),
+      image: zodFile({ description: 'Image file for the post' }),
+    }),
+    { contentType: 'multipart/form-data' }
+  )
+  @SwaggerResponse(200, 'Image uploaded successfully', PostSchema)
+  @SwaggerResponse(400, 'Invalid file', ErrorSchema)
+  async uploadImage({ params, response }: HttpContext) {
+    const postId = params.id
+
+    return response.json({
+      id: parseInt(postId),
+      title: 'Post with uploaded image',
+      content: 'Content with image...',
+      excerpt: 'Post excerpt',
+      authorId: 1,
+      published: true,
+      publishedAt: new Date().toISOString(),
+      tags: ['image', 'upload'],
+      metadata: { views: 0, likes: 0, shares: 0 },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  @SwaggerInfo({
+    tags: ['Posts'],
+    summary: 'Upload multiple post images',
+    description: 'Upload multiple images for a blog post using Zod with zodFile helper',
+  })
+  @SwaggerParam(
+    {
+      name: 'id',
+      location: 'path',
+      description: 'Post ID',
+    },
+    z.number().int().positive(),
+    true
+  )
+  @SwaggerRequestBody(
+    'Multiple post images upload',
+    z.object({
+      title: z.string().min(1).max(100),
+      images: zodFile({ description: 'Image files', multiple: true, minItems: 1, maxItems: 10 }),
+    }),
+    { contentType: 'multipart/form-data' }
+  )
+  @SwaggerResponse(200, 'Images uploaded successfully', PostSchema)
+  @SwaggerResponse(400, 'Invalid files', ErrorSchema)
+  async uploadMultipleImages({ params, response }: HttpContext) {
+    const postId = params.id
+
+    return response.json({
+      id: parseInt(postId),
+      title: 'Post with multiple images',
+      content: 'Content with images...',
+      excerpt: 'Post excerpt',
+      authorId: 1,
+      published: true,
+      publishedAt: new Date().toISOString(),
+      tags: ['images', 'upload', 'multiple'],
+      metadata: { views: 0, likes: 0, shares: 0 },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
   }
 }

@@ -1,6 +1,11 @@
 import type { ApplicationService } from '@adonisjs/core/types'
 import type { OpenSwaggerConfig, OpenAPISpec, RouteInfo, OpenAPIOperation } from './types.js'
-import { getSwaggerMetadata } from './decorators.js'
+import { getSwaggerMetadata, RAW_METADATA_MARKER, getGlobalValidator } from './decorators.js'
+import {
+  convertToJsonSchema,
+  createResponseSchema,
+  createRequestBodySchema,
+} from './schema_utils.js'
 
 /**
  * Parses AdonisJS routes and generates OpenAPI specification
@@ -89,6 +94,7 @@ export class RouteParser {
                   name: route.name,
                   domain: route.domain,
                   importFunction: handlerInfo.importFunction,
+                  controllerClass: handlerInfo.controllerClass,
                   methodName: handlerInfo.methodName,
                 })
               }
@@ -109,6 +115,7 @@ export class RouteParser {
                   name: route.name,
                   domain: route.domain,
                   importFunction: handlerInfo.importFunction,
+                  controllerClass: handlerInfo.controllerClass,
                   methodName: handlerInfo.methodName,
                 })
               }
@@ -137,6 +144,19 @@ export class RouteParser {
     }
 
     return routes
+  }
+
+  /**
+   * Extract method name from AdonisJS reference string
+   * e.g., '#controllers/users_controller.index' -> 'index'
+   * e.g., '#controllers/users_controller' -> 'handle' (single action controller)
+   */
+  private extractMethodNameFromReference(reference: string): string {
+    const parts = reference.split('.')
+    if (parts.length > 1) {
+      return parts[parts.length - 1]
+    }
+    return 'handle' // Single action controller
   }
 
   /**
@@ -181,17 +201,55 @@ export class RouteParser {
   private extractHandlerInfo(route: any): {
     handler: string
     importFunction?: () => Promise<any>
+    controllerClass?: any
     methodName?: string
   } {
     if (route.handler) {
       // Handle array handlers like [() => import('#controllers/auth_controller'), 'login']
+      // or [AuthController, 'login']
       if (Array.isArray(route.handler) && route.handler.length === 2) {
-        const [importFn, methodName] = route.handler
-        if (typeof importFn === 'function' && typeof methodName === 'string') {
+        const [firstElement, methodName] = route.handler
+        if (typeof firstElement === 'function' && typeof methodName === 'string') {
+          // Check if it's a class (constructor function) or an import function
+          // Classes have a prototype, import functions don't
+          if (firstElement.prototype && firstElement.prototype.constructor === firstElement) {
+            // It's a direct class reference like [AuthController, 'login']
+            return {
+              handler: `Array[${firstElement.name || 'Controller'}, ${methodName}]`,
+              controllerClass: firstElement,
+              methodName: methodName,
+            }
+          } else {
+            // It's an import function like [() => import('#controllers/auth_controller'), 'login']
+            return {
+              handler: `Array[${firstElement.name || 'ImportFunction'}, ${methodName}]`,
+              importFunction: firstElement,
+              methodName: methodName,
+            }
+          }
+        }
+      }
+
+      // Handle object handlers for AdonisJS v6 lazy-loaded controllers
+      // Structure: { reference: '#controllers/users_controller.index', name: '...', handle: Function }
+      if (typeof route.handler === 'object' && route.handler.reference && route.handler.handle) {
+        const reference = route.handler.reference
+
+        // Reference is a string like '#controllers/users_controller.index'
+        if (typeof reference === 'string') {
           return {
-            handler: `Array[${importFn.name || 'ImportFunction'}, ${methodName}]`,
-            importFunction: importFn,
-            methodName: methodName,
+            handler: reference,
+            methodName: this.extractMethodNameFromReference(reference),
+          }
+        }
+
+        // Reference is an array like [importFunction] (single action controller)
+        if (Array.isArray(reference) && reference.length > 0) {
+          const [controllerModule] = reference
+          return {
+            handler: `Array[${controllerModule?.name || 'Controller'}, handle]`,
+            importFunction: controllerModule,
+            methodName: 'handle',
           }
         }
       }
@@ -314,7 +372,27 @@ export class RouteParser {
    */
   private async getCustomMetadata(route: RouteInfo): Promise<any> {
     try {
-      // Handle array handlers with import functions first
+      // Handle array handlers with direct controller class reference first
+      if (route.controllerClass && route.methodName) {
+        try {
+          const ControllerClass = route.controllerClass
+
+          if (ControllerClass && ControllerClass.prototype) {
+            const metadata = getSwaggerMetadata(ControllerClass.prototype, route.methodName)
+            if (metadata) {
+              return await this.resolveMetadataPromises(metadata)
+            }
+          }
+
+          // If no metadata found but controller exists, return null (not an error)
+          return null
+        } catch {
+          // Silently continue with fallback
+          return null
+        }
+      }
+
+      // Handle array handlers with import functions
       if (route.importFunction && route.methodName) {
         try {
           // Execute the import function to get the controller module
@@ -332,10 +410,8 @@ export class RouteParser {
 
           // If no metadata found but controller exists, return null (not an error)
           return null
-        } catch (error: any) {
-          // Log import function errors but continue with fallback
-          // eslint-disable-next-line no-console
-          console.warn(`Error executing import function for route ${route.pattern}:`, error.message)
+        } catch {
+          // Silently continue with fallback
           return null
         }
       }
@@ -573,19 +649,39 @@ export class RouteParser {
   }
 
   /**
-   * Resolve any promises in metadata (from async schema conversion)
+   * Check if an object contains raw metadata that needs conversion
+   */
+  private isRawMetadata(obj: any): boolean {
+    return obj && typeof obj === 'object' && obj[RAW_METADATA_MARKER] === true
+  }
+
+  /**
+   * Convert raw metadata to OpenAPI format
+   * This is called at spec generation time to avoid circular dependencies during module initialization
    */
   private async resolveMetadataPromises(metadata: any): Promise<any> {
     const resolved = { ...metadata }
+    const validator = getGlobalValidator()
 
-    // Resolve response promises
+    // Convert raw response metadata to OpenAPI format
     if (resolved.responses) {
       const responseEntries = Object.entries(resolved.responses)
       const resolvedResponses: Record<string, any> = {}
 
       for (const [status, responseData] of responseEntries) {
-        if (responseData && typeof (responseData as any).then === 'function') {
-          // It's a promise, resolve it
+        if (this.isRawMetadata(responseData)) {
+          // Convert raw schema to OpenAPI response format
+          const raw = responseData as any
+          const responseSchema = raw.schema
+            ? await createResponseSchema(raw.schema, validator)
+            : undefined
+
+          resolvedResponses[status] = {
+            description: raw.description,
+            ...responseSchema,
+          }
+        } else if (responseData && typeof (responseData as any).then === 'function') {
+          // Legacy: handle promises (backward compatibility)
           resolvedResponses[status] = await (responseData as Promise<any>)
         } else {
           resolvedResponses[status] = responseData
@@ -595,17 +691,42 @@ export class RouteParser {
       resolved.responses = resolvedResponses
     }
 
-    // Resolve request body promise
-    if (resolved.requestBody && typeof (resolved.requestBody as any).then === 'function') {
-      resolved.requestBody = await (resolved.requestBody as Promise<any>)
+    // Convert raw request body metadata to OpenAPI format
+    if (resolved.requestBody) {
+      if (this.isRawMetadata(resolved.requestBody)) {
+        const raw = resolved.requestBody as any
+        const bodySchema = await createRequestBodySchema(raw.schema, validator, raw.contentType)
+
+        resolved.requestBody = {
+          description: raw.description,
+          required: raw.required,
+          ...bodySchema,
+        }
+      } else if (typeof (resolved.requestBody as any).then === 'function') {
+        // Legacy: handle promises (backward compatibility)
+        resolved.requestBody = await (resolved.requestBody as Promise<any>)
+      }
     }
 
-    // Resolve parameter promises
+    // Convert raw parameter metadata to OpenAPI format
     if (resolved.parameters && Array.isArray(resolved.parameters)) {
       const resolvedParameters = []
 
       for (const param of resolved.parameters) {
-        if (param && typeof (param as any).then === 'function') {
+        if (this.isRawMetadata(param)) {
+          // Convert raw schema to OpenAPI parameter format
+          const raw = param as any
+          const convertedSchema = await convertToJsonSchema(raw.schema, validator)
+
+          resolvedParameters.push({
+            name: raw.name,
+            in: raw.in,
+            required: raw.required,
+            schema: convertedSchema,
+            description: raw.description,
+          })
+        } else if (param && typeof (param as any).then === 'function') {
+          // Legacy: handle promises (backward compatibility)
           resolvedParameters.push(await (param as Promise<any>))
         } else {
           resolvedParameters.push(param)

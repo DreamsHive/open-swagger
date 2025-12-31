@@ -25,5 +25,9 @@ router
     router.post('/posts', '#controllers/posts_controller.store')
     router.put('/posts/:id', '#controllers/posts_controller.update')
     router.delete('/posts/:id', '#controllers/posts_controller.destroy')
+
+    // File upload routes with zodFile helper
+    router.post('/posts/:id/image', '#controllers/posts_controller.uploadImage')
+    router.post('/posts/:id/images', '#controllers/posts_controller.uploadMultipleImages')
   })
   .prefix('/api/v1')

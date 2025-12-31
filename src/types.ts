@@ -4,6 +4,170 @@
 export type SchemaValidator = 'typebox' | 'zod' | 'vinejs'
 
 /**
+ * Supported content types for request body
+ */
+export type RequestBodyContentType =
+  | 'application/json'
+  | 'multipart/form-data'
+  | 'application/x-www-form-urlencoded'
+
+/**
+ * Options for file schema helpers
+ */
+export interface FileOptions {
+  /**
+   * Description of the file field
+   */
+  description?: string
+  /**
+   * Whether the field accepts multiple files
+   * @default false
+   */
+  multiple?: boolean
+  /**
+   * Minimum number of files (only applicable when multiple: true)
+   */
+  minItems?: number
+  /**
+   * Maximum number of files (only applicable when multiple: true)
+   */
+  maxItems?: number
+}
+
+/**
+ * Options for @SwaggerRequestBody decorator
+ */
+export interface SwaggerRequestBodyOptions {
+  /**
+   * Whether the request body is required
+   * @default true
+   */
+  required?: boolean
+  /**
+   * Content type for the request body
+   * @default 'application/json'
+   */
+  contentType?: RequestBodyContentType
+}
+
+/**
+ * API Key security scheme (for header, query, or cookie authentication)
+ */
+export interface ApiKeySecurityScheme {
+  type: 'apiKey'
+  /**
+   * The location of the API key
+   * - 'header': API key is sent in a header (e.g., X-API-Key)
+   * - 'query': API key is sent as a query parameter
+   * - 'cookie': API key is sent in a cookie (e.g., session cookies, Better-Auth)
+   */
+  in: 'header' | 'query' | 'cookie'
+  /**
+   * The name of the header, query parameter, or cookie
+   */
+  name: string
+  /**
+   * Optional description
+   */
+  description?: string
+}
+
+/**
+ * HTTP security scheme (for Bearer token or Basic authentication)
+ */
+export interface HttpSecurityScheme {
+  type: 'http'
+  /**
+   * The HTTP authentication scheme
+   * - 'bearer': Bearer token authentication (JWT)
+   * - 'basic': Basic authentication
+   */
+  scheme: 'bearer' | 'basic'
+  /**
+   * Bearer token format hint (e.g., 'JWT')
+   * Only applicable when scheme is 'bearer'
+   */
+  bearerFormat?: string
+  /**
+   * Optional description
+   */
+  description?: string
+}
+
+/**
+ * OAuth2 security scheme
+ */
+export interface OAuth2SecurityScheme {
+  type: 'oauth2'
+  /**
+   * OAuth2 flows configuration
+   */
+  flows: {
+    /**
+     * Authorization Code flow
+     */
+    authorizationCode?: {
+      authorizationUrl: string
+      tokenUrl: string
+      refreshUrl?: string
+      scopes: Record<string, string>
+    }
+    /**
+     * Client Credentials flow
+     */
+    clientCredentials?: {
+      tokenUrl: string
+      refreshUrl?: string
+      scopes: Record<string, string>
+    }
+    /**
+     * Implicit flow (deprecated but still supported)
+     */
+    implicit?: {
+      authorizationUrl: string
+      refreshUrl?: string
+      scopes: Record<string, string>
+    }
+    /**
+     * Password flow (deprecated but still supported)
+     */
+    password?: {
+      tokenUrl: string
+      refreshUrl?: string
+      scopes: Record<string, string>
+    }
+  }
+  /**
+   * Optional description
+   */
+  description?: string
+}
+
+/**
+ * OpenID Connect security scheme
+ */
+export interface OpenIdConnectSecurityScheme {
+  type: 'openIdConnect'
+  /**
+   * OpenID Connect discovery URL
+   */
+  openIdConnectUrl: string
+  /**
+   * Optional description
+   */
+  description?: string
+}
+
+/**
+ * Union type for all supported security schemes
+ */
+export type SecurityScheme =
+  | ApiKeySecurityScheme
+  | HttpSecurityScheme
+  | OAuth2SecurityScheme
+  | OpenIdConnectSecurityScheme
+
+/**
  * Components configuration for generating OpenAPI component schemas
  */
 export interface ComponentsConfig {
@@ -74,8 +238,9 @@ export interface OpenSwaggerConfig {
 
   /**
    * Security schemes
+   * Supports: API Key (header, query, cookie), HTTP (bearer, basic), OAuth2, OpenID Connect
    */
-  securitySchemes?: Record<string, any>
+  securitySchemes?: Record<string, SecurityScheme>
 
   /**
    * Default security requirements
@@ -231,8 +396,14 @@ export interface RouteInfo {
    */
   importFunction?: () => Promise<any>
   /**
+   * Direct controller class reference (array handler format)
+   * Used when route handler is [AuthController, 'methodName']
+   */
+  controllerClass?: any
+  /**
    * Method name for array handler format
    * Used when route handler is [() => import('#controllers/...'), 'methodName']
+   * or [AuthController, 'methodName']
    */
   methodName?: string
 }
@@ -298,4 +469,40 @@ export interface SwaggerMetadata {
   responses?: Record<string, any>
   security?: Array<Record<string, string[]>>
   deprecated?: boolean
+}
+
+/**
+ * Raw response data stored by decorators (before schema conversion)
+ * Schema conversion is deferred until spec generation to avoid circular dependencies
+ */
+export interface RawResponseData {
+  [rawMetadataMarker: symbol]: true
+  description: string
+  schema?: SchemaInput
+  contentType?: string
+}
+
+/**
+ * Raw request body data stored by decorators (before schema conversion)
+ * Schema conversion is deferred until spec generation to avoid circular dependencies
+ */
+export interface RawRequestBodyData {
+  [rawMetadataMarker: symbol]: true
+  description: string
+  schema: SchemaInput
+  required: boolean
+  contentType: string
+}
+
+/**
+ * Raw parameter data stored by decorators (before schema conversion)
+ * Schema conversion is deferred until spec generation to avoid circular dependencies
+ */
+export interface RawParameterData {
+  [rawMetadataMarker: symbol]: true
+  name: string
+  in: 'query' | 'path' | 'header'
+  required: boolean
+  schema: SchemaInput
+  description?: string
 }
