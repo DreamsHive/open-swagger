@@ -361,6 +361,15 @@ export interface OpenSwaggerConfig {
     exclude?: string[]
 
     /**
+     * HTTP methods to ignore/exclude from documentation.
+     * Useful for filtering out auto-generated HEAD endpoints.
+     * Method matching is case-insensitive.
+     * @example ['HEAD'] - Exclude all HEAD endpoints
+     * @example ['HEAD', 'OPTIONS'] - Exclude HEAD and OPTIONS endpoints
+     */
+    ignoreMethods?: string[]
+
+    /**
      * Automatically scan for routes
      */
     autoScan?: boolean
