@@ -78,33 +78,61 @@
                     return;
                 }
                 try {
-                    // Initialize Scalar API Reference with proper configuration
-                    window.Scalar.createApiReference("#scalar-container", {
+                    // Build configuration object
+                    const config = {
                         // OpenAPI document URL
                         spec: {
                             url: "{{ specUrl }}"
                         },
-                        // Basic configuration - use theme from config
+                        // Theme configuration
                         @if(theme === 'auto')
-                theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? "moon" : "default",
-            @else
-                theme: "{{ theme || 'default' }}",
-            @end
+                            theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? "moon" : "default",
+                        @else
+                            theme: "{{ theme || 'default' }}",
+                        @end
 
-                        layout: "{{ layout || "modern" }}",
+                        // Layout and UI options
+                        layout: "{{ layout || 'modern' }}",
                         showSidebar: {{ showSidebar !== false ? 'true' : 'false' }},
-                        searchHotKey: "{{ searchHotKey || "k" }}",
+                        searchHotKey: "{{ searchHotKey }}",
+
+                        // New configuration options
+                        darkMode: {{ darkMode ? 'true' : 'false' }},
+                        hideDarkModeToggle: {{ hideDarkModeToggle ? 'true' : 'false' }},
+                        hideTestRequestButton: {{ hideTestRequestButton ? 'true' : 'false' }},
+                        hideModels: {{ hideModels ? 'true' : 'false' }},
+                        hideSearch: {{ hideSearch ? 'true' : 'false' }},
+                        persistAuth: {{ persistAuth ? 'true' : 'false' }},
+                        hideDownloadButton: false,
+
+                        // Conditional proxy URL
+                        @if(proxyUrl)
+                            proxyUrl: "{{ proxyUrl }}",
+                        @end
+
+                        // Custom fetch function for credentials (cookie auth support)
+                        @if(withCredentials)
+                            fetch: (url, options) => {
+                                return fetch(url, {
+                                    ...options,
+                                    credentials: 'include'
+                                });
+                            },
+                        @end
+
                         // Metadata
                         metaData: {
                             title: "{{ title }}",
-                            description: "{{ description || "API Documentation" }}"
-                        },
-                        // Additional configuration
-                        hideDownloadButton: false,
-                        hideTestRequestButton: false,
-                        darkMode: false,
-                        hideDarkModeToggle: false
-                    });
+                            description: "{{ description || 'API Documentation' }}"
+                        }
+                    };
+
+                    // Merge additional configuration (typed options take precedence)
+                    const additionalConfig = {{{ JSON.stringify(additionalConfig) }}};
+                    const finalConfig = { ...additionalConfig, ...config };
+
+                    // Initialize Scalar API Reference
+                    window.Scalar.createApiReference("#scalar-container", finalConfig);
                 } catch (error) {
                     console.error("Failed to initialize Scalar API Reference:", error);
                 }

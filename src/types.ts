@@ -287,6 +287,60 @@ export interface OpenSwaggerConfig {
     showSidebar?: boolean
 
     /**
+     * Include credentials (cookies) in API requests
+     * Required for cookie-based authentication
+     * @default true
+     */
+    withCredentials?: boolean
+
+    /**
+     * Initial dark mode state
+     * @default false
+     */
+    darkMode?: boolean
+
+    /**
+     * Hide the dark mode toggle button
+     * @default false
+     */
+    hideDarkModeToggle?: boolean
+
+    /**
+     * Hide the "Test Request" button
+     * @default false
+     */
+    hideTestRequestButton?: boolean
+
+    /**
+     * Hide the models/schemas section
+     * @default false
+     */
+    hideModels?: boolean
+
+    /**
+     * Hide the search bar
+     * @default false
+     */
+    hideSearch?: boolean
+
+    /**
+     * Keyboard shortcut for search (used with CMD/CTRL)
+     * @default 'k'
+     */
+    searchHotKey?: string
+
+    /**
+     * Proxy URL for API requests (helps with CORS)
+     */
+    proxyUrl?: string
+
+    /**
+     * Persist authentication credentials in localStorage
+     * @default false
+     */
+    persistAuth?: boolean
+
+    /**
      * Additional Scalar configuration options
      */
     configuration?: Record<string, any>
@@ -305,6 +359,15 @@ export interface OpenSwaggerConfig {
      * Exclude routes matching these patterns
      */
     exclude?: string[]
+
+    /**
+     * HTTP methods to ignore/exclude from documentation.
+     * Useful for filtering out auto-generated HEAD endpoints.
+     * Method matching is case-insensitive.
+     * @example ['HEAD'] - Exclude all HEAD endpoints
+     * @example ['HEAD', 'OPTIONS'] - Exclude HEAD and OPTIONS endpoints
+     */
+    ignoreMethods?: string[]
 
     /**
      * Automatically scan for routes

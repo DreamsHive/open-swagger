@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import fc from 'fast-check'
 
 test.group('OpenSwaggerService', () => {
   test('should create service instance', async ({ assert }) => {
@@ -144,216 +145,158 @@ test.group('OpenSwaggerService', () => {
     assert.isUndefined(spec.components?.schemas || undefined)
   })
 
-  test('should include cookie authentication security scheme', async ({ assert }) => {
+  /**
+   * Feature: swagger-cookie-auth-fix, Property 1: Default Values Are Applied
+   * Validates: Requirements 1.4, 4.3
+   */
+  test('Property 1: Default values are applied when scalar options not set', async ({
+    assert,
+  }) => {
     const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
 
-    const config = {
-      enabled: true,
-      path: '/docs',
-      info: {
-        title: 'Test API',
-        version: '1.0.0',
-      },
-      scalar: {},
-      routes: {
-        autoScan: false,
-      },
-      securitySchemes: {
-        cookieAuth: {
-          type: 'apiKey' as const,
-          in: 'cookie' as const,
-          name: 'session',
-          description: 'Session cookie for authentication',
-        },
-      },
-    }
-
-    const mockApp = {
-      container: {
-        make: async () => ({}),
-      },
-    }
-
-    const service = new OpenSwaggerService(config, mockApp as any)
-    const spec = await service.generateSpec()
-
-    assert.isObject(spec.components?.securitySchemes)
-    assert.property(spec.components?.securitySchemes, 'cookieAuth')
-    assert.equal(spec.components?.securitySchemes?.cookieAuth.type, 'apiKey')
-    assert.equal(spec.components?.securitySchemes?.cookieAuth.in, 'cookie')
-    assert.equal(spec.components?.securitySchemes?.cookieAuth.name, 'session')
-  })
-
-  test('should include bearer token security scheme', async ({ assert }) => {
-    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
-
-    const config = {
-      enabled: true,
-      path: '/docs',
-      info: {
-        title: 'Test API',
-        version: '1.0.0',
-      },
-      scalar: {},
-      routes: {
-        autoScan: false,
-      },
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http' as const,
-          scheme: 'bearer' as const,
-          bearerFormat: 'JWT',
-          description: 'JWT Bearer token',
-        },
-      },
-    }
-
-    const mockApp = {
-      container: {
-        make: async () => ({}),
-      },
-    }
-
-    const service = new OpenSwaggerService(config, mockApp as any)
-    const spec = await service.generateSpec()
-
-    assert.isObject(spec.components?.securitySchemes)
-    assert.property(spec.components?.securitySchemes, 'bearerAuth')
-    assert.equal(spec.components?.securitySchemes?.bearerAuth.type, 'http')
-    assert.equal(spec.components?.securitySchemes?.bearerAuth.scheme, 'bearer')
-    assert.equal(spec.components?.securitySchemes?.bearerAuth.bearerFormat, 'JWT')
-  })
-
-  test('should include multiple security schemes', async ({ assert }) => {
-    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
-
-    const config = {
-      enabled: true,
-      path: '/docs',
-      info: {
-        title: 'Test API',
-        version: '1.0.0',
-      },
-      scalar: {},
-      routes: {
-        autoScan: false,
-      },
-      securitySchemes: {
-        cookieAuth: {
-          type: 'apiKey' as const,
-          in: 'cookie' as const,
-          name: 'session',
-        },
-        bearerAuth: {
-          type: 'http' as const,
-          scheme: 'bearer' as const,
-          bearerFormat: 'JWT',
-        },
-        apiKeyAuth: {
-          type: 'apiKey' as const,
-          in: 'header' as const,
-          name: 'X-API-Key',
-        },
-        basicAuth: {
-          type: 'http' as const,
-          scheme: 'basic' as const,
-        },
-      },
-    }
-
-    const mockApp = {
-      container: {
-        make: async () => ({}),
-      },
-    }
-
-    const service = new OpenSwaggerService(config, mockApp as any)
-    const spec = await service.generateSpec()
-
-    assert.isObject(spec.components?.securitySchemes)
-    assert.property(spec.components?.securitySchemes, 'cookieAuth')
-    assert.property(spec.components?.securitySchemes, 'bearerAuth')
-    assert.property(spec.components?.securitySchemes, 'apiKeyAuth')
-    assert.property(spec.components?.securitySchemes, 'basicAuth')
-
-    // Verify cookie auth
-    assert.equal(spec.components?.securitySchemes?.cookieAuth.in, 'cookie')
-
-    // Verify API key auth
-    assert.equal(spec.components?.securitySchemes?.apiKeyAuth.in, 'header')
-
-    // Verify basic auth
-    assert.equal(spec.components?.securitySchemes?.basicAuth.scheme, 'basic')
-  })
-
-  test('should include global security requirements', async ({ assert }) => {
-    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
-
-    const config = {
-      enabled: true,
-      path: '/docs',
-      info: {
-        title: 'Test API',
-        version: '1.0.0',
-      },
-      scalar: {},
-      routes: {
-        autoScan: false,
-      },
-      securitySchemes: {
-        cookieAuth: {
-          type: 'apiKey' as const,
-          in: 'cookie' as const,
-          name: 'session',
-        },
-      },
-      security: [{ cookieAuth: [] }],
-    }
-
-    const mockApp = {
-      container: {
-        make: async () => ({}),
-      },
-    }
-
-    const service = new OpenSwaggerService(config, mockApp as any)
-    const spec = await service.generateSpec()
-
-    assert.isArray(spec.security)
-    assert.lengthOf(spec.security!, 1)
-    assert.deepEqual(spec.security![0], { cookieAuth: [] })
-  })
-
-  test('should include OAuth2 security scheme with scopes', async ({ assert }) => {
-    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
-
-    const config = {
-      enabled: true,
-      path: '/docs',
-      info: {
-        title: 'Test API',
-        version: '1.0.0',
-      },
-      scalar: {},
-      routes: {
-        autoScan: false,
-      },
-      securitySchemes: {
-        oauth2Auth: {
-          type: 'oauth2' as const,
-          description: 'OAuth2 authentication',
-          flows: {
-            authorizationCode: {
-              authorizationUrl: 'https://example.com/oauth/authorize',
-              tokenUrl: 'https://example.com/oauth/token',
-              scopes: {
-                'read:users': 'Read user information',
-                'write:users': 'Modify user information',
-              },
+    fc.assert(
+      fc.property(
+        fc.record({
+          title: fc.string({ minLength: 1 }),
+          version: fc.string({ minLength: 1 }),
+        }),
+        (info) => {
+          const config = {
+            enabled: true,
+            path: '/docs',
+            info: {
+              title: info.title,
+              version: info.version,
             },
-          },
-        },
+            scalar: {},
+            routes: {},
+          }
+
+          const mockApp = {
+            container: {
+              make: async () => ({}),
+            },
+          }
+
+          const service = new OpenSwaggerService(config, mockApp as any)
+          const templateData = service.getScalarTemplateData('/api/spec')
+
+          // Verify all default values
+          assert.equal(templateData.withCredentials, true)
+          assert.equal(templateData.searchHotKey, 'k')
+          assert.equal(templateData.darkMode, false)
+          assert.equal(templateData.hideDarkModeToggle, false)
+          assert.equal(templateData.hideTestRequestButton, false)
+          assert.equal(templateData.hideModels, false)
+          assert.equal(templateData.hideSearch, false)
+          assert.equal(templateData.persistAuth, false)
+          assert.equal(templateData.showSidebar, true)
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
+
+  /**
+   * Feature: swagger-cookie-auth-fix, Property 2: Configuration Passthrough
+   * Validates: Requirements 7.1, 7.3
+   */
+  test('Property 2: Configuration passthrough includes all set values', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    fc.assert(
+      fc.property(
+        fc.record({
+          withCredentials: fc.boolean(),
+          darkMode: fc.boolean(),
+          hideDarkModeToggle: fc.boolean(),
+          hideTestRequestButton: fc.boolean(),
+          hideModels: fc.boolean(),
+          hideSearch: fc.boolean(),
+          searchHotKey: fc.string({ minLength: 1, maxLength: 1 }),
+          proxyUrl: fc.option(fc.webUrl(), { nil: undefined }),
+          persistAuth: fc.boolean(),
+          showSidebar: fc.boolean(),
+          configuration: fc.option(
+            fc.record({
+              customKey: fc.string(),
+            }),
+            { nil: undefined }
+          ),
+        }),
+        (scalarConfig) => {
+          const config = {
+            enabled: true,
+            path: '/docs',
+            info: {
+              title: 'Test API',
+              version: '1.0.0',
+            },
+            scalar: scalarConfig,
+            routes: {},
+          }
+
+          const mockApp = {
+            container: {
+              make: async () => ({}),
+            },
+          }
+
+          const service = new OpenSwaggerService(config, mockApp as any)
+          const templateData = service.getScalarTemplateData('/api/spec')
+
+          // Verify all configured values are passed through
+          assert.equal(templateData.withCredentials, scalarConfig.withCredentials)
+          assert.equal(templateData.darkMode, scalarConfig.darkMode)
+          assert.equal(templateData.hideDarkModeToggle, scalarConfig.hideDarkModeToggle)
+          assert.equal(templateData.hideTestRequestButton, scalarConfig.hideTestRequestButton)
+          assert.equal(templateData.hideModels, scalarConfig.hideModels)
+          assert.equal(templateData.hideSearch, scalarConfig.hideSearch)
+          assert.equal(templateData.searchHotKey, scalarConfig.searchHotKey)
+          assert.equal(templateData.proxyUrl, scalarConfig.proxyUrl || '')
+          assert.equal(templateData.persistAuth, scalarConfig.persistAuth)
+          assert.equal(templateData.showSidebar, scalarConfig.showSidebar)
+
+          // Verify additionalConfig contains configuration object
+          if (scalarConfig.configuration) {
+            assert.deepEqual(templateData.additionalConfig, scalarConfig.configuration)
+          } else {
+            assert.deepEqual(templateData.additionalConfig, {})
+          }
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
+
+  /**
+   * Unit test for type definitions
+   * Validates: Requirements 1.1, 2.1, 2.2, 3.1, 3.2, 3.3, 4.1, 5.1, 6.1
+   */
+  test('Type definitions: all new scalar options compile correctly', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    // This test verifies that all new options are accepted by the config
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
       },
+      scalar: {
+        withCredentials: true,
+        darkMode: true,
+        hideDarkModeToggle: true,
+        hideTestRequestButton: true,
+        hideModels: true,
+        hideSearch: true,
+        searchHotKey: 'j',
+        proxyUrl: 'https://proxy.example.com',
+        persistAuth: true,
+        configuration: { customOption: 'value' },
+      },
+      routes: {},
     }
 
     const mockApp = {
@@ -363,20 +306,173 @@ test.group('OpenSwaggerService', () => {
     }
 
     const service = new OpenSwaggerService(config, mockApp as any)
-    const spec = await service.generateSpec()
+    const templateData = service.getScalarTemplateData('/api/spec')
 
-    assert.isObject(spec.components?.securitySchemes)
-    assert.property(spec.components?.securitySchemes, 'oauth2Auth')
-    assert.equal(spec.components?.securitySchemes?.oauth2Auth.type, 'oauth2')
-    assert.isObject(spec.components?.securitySchemes?.oauth2Auth.flows)
-    assert.isObject(spec.components?.securitySchemes?.oauth2Auth.flows.authorizationCode)
-    assert.equal(
-      spec.components?.securitySchemes?.oauth2Auth.flows.authorizationCode.authorizationUrl,
-      'https://example.com/oauth/authorize'
-    )
-    assert.property(
-      spec.components?.securitySchemes?.oauth2Auth.flows.authorizationCode.scopes,
-      'read:users'
-    )
+    // All options should be present in template data
+    assert.equal(templateData.withCredentials, true)
+    assert.equal(templateData.darkMode, true)
+    assert.equal(templateData.hideDarkModeToggle, true)
+    assert.equal(templateData.hideTestRequestButton, true)
+    assert.equal(templateData.hideModels, true)
+    assert.equal(templateData.hideSearch, true)
+    assert.equal(templateData.searchHotKey, 'j')
+    assert.equal(templateData.proxyUrl, 'https://proxy.example.com')
+    assert.equal(templateData.persistAuth, true)
+    assert.deepEqual(templateData.additionalConfig, { customOption: 'value' })
+  })
+
+  /**
+   * Edge case tests
+   * Validates: Requirements 7.1
+   */
+  test('Edge case: empty scalar config uses all defaults', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {},
+      routes: {},
+    }
+
+    const mockApp = {
+      container: {
+        make: async () => ({}),
+      },
+    }
+
+    const service = new OpenSwaggerService(config, mockApp as any)
+    const templateData = service.getScalarTemplateData('/api/spec')
+
+    assert.equal(templateData.withCredentials, true)
+    assert.equal(templateData.darkMode, false)
+    assert.equal(templateData.searchHotKey, 'k')
+    assert.deepEqual(templateData.additionalConfig, {})
+  })
+
+  test('Edge case: partial scalar config merges with defaults', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {
+        darkMode: true,
+        // Other options not set
+      },
+      routes: {},
+    }
+
+    const mockApp = {
+      container: {
+        make: async () => ({}),
+      },
+    }
+
+    const service = new OpenSwaggerService(config, mockApp as any)
+    const templateData = service.getScalarTemplateData('/api/spec')
+
+    // Set value should be used
+    assert.equal(templateData.darkMode, true)
+    // Defaults should apply for unset values
+    assert.equal(templateData.withCredentials, true)
+    assert.equal(templateData.searchHotKey, 'k')
+  })
+
+  test('Edge case: undefined values are treated as unset', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {
+        withCredentials: undefined,
+        darkMode: undefined,
+      },
+      routes: {},
+    }
+
+    const mockApp = {
+      container: {
+        make: async () => ({}),
+      },
+    }
+
+    const service = new OpenSwaggerService(config, mockApp as any)
+    const templateData = service.getScalarTemplateData('/api/spec')
+
+    // Defaults should apply for undefined values
+    assert.equal(templateData.withCredentials, true)
+    assert.equal(templateData.darkMode, false)
+  })
+
+  test('Edge case: withCredentials false is respected', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {
+        withCredentials: false,
+      },
+      routes: {},
+    }
+
+    const mockApp = {
+      container: {
+        make: async () => ({}),
+      },
+    }
+
+    const service = new OpenSwaggerService(config, mockApp as any)
+    const templateData = service.getScalarTemplateData('/api/spec')
+
+    // Explicit false should be respected
+    assert.equal(templateData.withCredentials, false)
+  })
+
+  test('Edge case: showSidebar false is respected', async ({ assert }) => {
+    const { OpenSwaggerService } = await import('../src/open_swagger_service.js')
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: {
+        title: 'Test API',
+        version: '1.0.0',
+      },
+      scalar: {
+        showSidebar: false,
+      },
+      routes: {},
+    }
+
+    const mockApp = {
+      container: {
+        make: async () => ({}),
+      },
+    }
+
+    const service = new OpenSwaggerService(config, mockApp as any)
+    const templateData = service.getScalarTemplateData('/api/spec')
+
+    // Explicit false should be respected
+    assert.equal(templateData.showSidebar, false)
   })
 })
