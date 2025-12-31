@@ -109,6 +109,14 @@ export default defineConfig({
       '/health*',
       // Add more patterns as needed
     ],
+
+    /**
+     * HTTP methods to ignore/exclude from documentation
+     * AdonisJS automatically creates HEAD endpoints for every GET endpoint,
+     * which can cause duplicate declarations in the OpenAPI spec.
+     * Use this to filter out unwanted HTTP methods.
+     */
+    // ignoreMethods: ['HEAD'],
   },
 
   /**

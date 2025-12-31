@@ -285,6 +285,15 @@ export class RouteParser {
    */
   private filterRoutes(routes: RouteInfo[]): RouteInfo[] {
     return routes.filter((route) => {
+      // Skip if route method is in ignoreMethods list (case-insensitive)
+      if (this.config.routes?.ignoreMethods && this.config.routes.ignoreMethods.length > 0) {
+        const methodUpper = route.method.toUpperCase()
+        const ignoredMethods = this.config.routes.ignoreMethods.map((m) => m.toUpperCase())
+        if (ignoredMethods.includes(methodUpper)) {
+          return false
+        }
+      }
+
       // Skip if route matches exclude patterns
       if (this.config.routes?.exclude) {
         for (const pattern of this.config.routes.exclude) {
