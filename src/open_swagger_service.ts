@@ -135,15 +135,31 @@ export class OpenSwaggerService {
    * Get template data for Scalar UI Edge rendering
    */
   getScalarTemplateData(specUrl: string): any {
+    const scalar = this.config.scalar || {}
+
     return {
+      // Existing options
       title: this.config.info.title,
       description: this.config.info.description,
       specUrl,
-      theme: this.config.scalar?.theme || 'auto',
-      layout: this.config.scalar?.layout || 'modern',
-      showSidebar: this.config.scalar?.showSidebar !== false,
-      searchHotKey: 'k',
-      customCss: this.config.scalar?.customCss || '',
+      theme: scalar.theme || 'auto',
+      layout: scalar.layout || 'modern',
+      showSidebar: scalar.showSidebar !== false,
+      customCss: scalar.customCss || '',
+
+      // New options with defaults
+      withCredentials: scalar.withCredentials !== false, // default true
+      darkMode: scalar.darkMode || false,
+      hideDarkModeToggle: scalar.hideDarkModeToggle || false,
+      hideTestRequestButton: scalar.hideTestRequestButton || false,
+      hideModels: scalar.hideModels || false,
+      hideSearch: scalar.hideSearch || false,
+      searchHotKey: scalar.searchHotKey || 'k',
+      proxyUrl: scalar.proxyUrl || '',
+      persistAuth: scalar.persistAuth || false,
+
+      // Pass through additional configuration
+      additionalConfig: scalar.configuration || {},
     }
   }
 
