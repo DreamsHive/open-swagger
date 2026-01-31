@@ -2,6 +2,7 @@ import 'reflect-metadata'
 import type { ApplicationService } from '@adonisjs/core/types'
 import { OpenSwaggerService } from '../src/open_swagger_service.js'
 import type { OpenSwaggerConfig } from '../src/types.js'
+import SwaggerMiddleware from '../src/middleware/swagger_middleware.js'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -70,46 +71,62 @@ export default class OpenSwaggerProvider {
       const config = this.app.config.get('swagger', {}) as OpenSwaggerConfig
       // Only register routes if the service is enabled
       if (config.enabled !== false) {
+        // Validate basicAuth config
+        if (config.basicAuth?.enabled) {
+          if (!config.basicAuth.username || !config.basicAuth.password) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              '[open-swagger] basicAuth enabled but username/password missing. Auth disabled.'
+            )
+            config.basicAuth.enabled = false
+          }
+        }
+
         const router = await this.app.container.make('router')
         const service = await this.app.container.make('open.swagger')
 
         const docsPath = config.path || '/docs'
 
+        // Create middleware instance with config
+        const middleware = new SwaggerMiddleware(config)
+
         // Register the documentation routes automatically
-        router.group(() => {
-          // Documentation UI endpoint
-          router.get(docsPath, async ({ response }: any) => {
-            const specUrl = `${docsPath}/json`
+        router
+          .group(() => {
+            // Documentation UI endpoint
+            router.get(docsPath, async ({ response }: any) => {
+              const specUrl = `${docsPath}/json`
 
-            response.header('Content-Type', 'text/html')
-            response.header('Cache-Control', 'no-cache')
+              response.header('Content-Type', 'text/html')
+              response.header('Cache-Control', 'no-cache')
 
-            // Render using Edge.js directly
-            const templateData = service.getScalarTemplateData(specUrl)
+              // Render using Edge.js directly
+              const templateData = service.getScalarTemplateData(specUrl)
 
-            // Use Edge.js directly for rendering
-            const { default: edge } = await import('edge.js')
-            const rendered = await edge.render('adonis-open-swagger::scalar', templateData)
+              // Use Edge.js directly for rendering
+              const { default: edge } = await import('edge.js')
+              const rendered = await edge.render('adonis-open-swagger::scalar', templateData)
 
-            return rendered
+              return rendered
+            })
+
+            // JSON endpoint
+            router.get(`${docsPath}/json`, async ({ response }: any) => {
+              const spec = await service.getSpecJson()
+              response.header('Content-Type', 'application/json')
+              response.header('Cache-Control', 'no-cache')
+              return spec
+            })
+
+            // YAML endpoint
+            router.get(`${docsPath}/yaml`, async ({ response }: any) => {
+              const spec = await service.getSpecYaml()
+              response.header('Content-Type', 'application/yaml')
+              response.header('Cache-Control', 'no-cache')
+              return spec
+            })
           })
-
-          // JSON endpoint
-          router.get(`${docsPath}/json`, async ({ response }: any) => {
-            const spec = await service.getSpecJson()
-            response.header('Content-Type', 'application/json')
-            response.header('Cache-Control', 'no-cache')
-            return spec
-          })
-
-          // YAML endpoint
-          router.get(`${docsPath}/yaml`, async ({ response }: any) => {
-            const spec = await service.getSpecYaml()
-            response.header('Content-Type', 'application/yaml')
-            response.header('Cache-Control', 'no-cache')
-            return spec
-          })
-        })
+          .use((ctx, next) => middleware.handle(ctx, next))
       }
     } catch {
       // Silently fail if there are issues - this ensures the app can still start

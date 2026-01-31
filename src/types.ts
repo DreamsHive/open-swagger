@@ -185,6 +185,36 @@ export interface ComponentsConfig {
 }
 
 /**
+ * Basic authentication configuration for docs endpoints
+ * Protects /docs, /docs/json, /docs/yaml from unauthorized access
+ */
+export interface BasicAuthConfig {
+  /**
+   * Enable basic authentication for docs endpoints
+   * @default false
+   */
+  enabled: boolean
+
+  /**
+   * Username for basic auth
+   * Supports env() helper for environment variables
+   */
+  username: string
+
+  /**
+   * Password for basic auth
+   * Supports env() helper for environment variables
+   */
+  password: string
+
+  /**
+   * Realm name shown in browser auth dialog
+   * @default 'API Documentation'
+   */
+  realm?: string
+}
+
+/**
  * Configuration options for Open Swagger
  */
 export interface OpenSwaggerConfig {
@@ -192,6 +222,12 @@ export interface OpenSwaggerConfig {
    * Enable or disable the swagger documentation
    */
   enabled: boolean
+
+  /**
+   * Basic authentication for docs endpoints
+   * Protects documentation from unauthorized access in production
+   */
+  basicAuth?: BasicAuthConfig
 
   /**
    * Path where the documentation will be served
