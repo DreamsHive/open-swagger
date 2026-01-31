@@ -1,11 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
-import {
-  SwaggerInfo,
-  SwaggerResponse,
-  SwaggerRequestBody,
-  vineFile,
-} from 'adonis-open-swagger'
+import { SwaggerInfo, SwaggerResponse, SwaggerRequestBody, vineFile } from 'adonis-open-swagger'
 
 export default class FilesController {
   @SwaggerInfo({
@@ -54,4 +49,3 @@ export default class FilesController {
     })
   }
 }
-

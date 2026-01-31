@@ -1,6 +1,7 @@
 {{{
   exports({ to: app.configPath('swagger.ts') })
 }}}
+import env from '#start/env'
 import { defineConfig } from 'adonis-open-swagger'
 
 /**
@@ -11,6 +12,18 @@ export default defineConfig({
    * Enable or disable swagger documentation
    */
   enabled: true,
+
+  /**
+   * Basic authentication for docs endpoints
+   * Protects documentation from unauthorized access in production
+   * IMPORTANT: Use env() to read credentials from environment variables
+   */
+  // basicAuth: {
+  //   enabled: true,
+  //   username: env('SWAGGER_USERNAME', 'admin'),
+  //   password: env('SWAGGER_PASSWORD', 'secret'),
+  //   realm: 'API Documentation',
+  // },
 
   /**
    * Path where the documentation will be served
