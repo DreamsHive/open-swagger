@@ -529,16 +529,6 @@ function convertVineJSProperty(prop: any, refs: any): any {
     return jsonProperty
   }
 
-  // Handle enum type
-  if (prop.type === 'enum' && Array.isArray(prop.choices)) {
-    jsonProperty.type = 'string'
-    jsonProperty.enum = prop.choices
-    if (prop.allowNull) {
-      jsonProperty.nullable = true
-    }
-    return jsonProperty
-  }
-
   // Map VineJS subtypes to JSON Schema types for literal types
   switch (prop.subtype) {
     case 'string':
@@ -571,6 +561,11 @@ function convertVineJSProperty(prop: any, refs: any): any {
 
       if (refData && refData.options) {
         const options = refData.options
+
+        // Handle enum choices (vine.enum() stores choices in validation options)
+        if (options.choices && Array.isArray(options.choices)) {
+          jsonProperty.enum = options.choices
+        }
 
         // Map common validation options
         if (options.min !== undefined) {
