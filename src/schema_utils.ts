@@ -529,10 +529,10 @@ function convertVineJSProperty(prop: any, refs: any): any {
     return jsonProperty
   }
 
-  // Handle enum type
-  if (prop.type === 'enum' && Array.isArray(prop.choices)) {
-    jsonProperty.type = 'string'
-    jsonProperty.enum = prop.choices
+  // Handle record type (dictionary/map)
+  if (prop.type === 'record' && prop.each) {
+    jsonProperty.type = 'object'
+    jsonProperty.additionalProperties = convertVineJSProperty(prop.each, refs)
     if (prop.allowNull) {
       jsonProperty.nullable = true
     }
@@ -571,6 +571,11 @@ function convertVineJSProperty(prop: any, refs: any): any {
 
       if (refData && refData.options) {
         const options = refData.options
+
+        // Handle enum choices (vine.enum() stores choices in validation options)
+        if (options.choices && Array.isArray(options.choices)) {
+          jsonProperty.enum = options.choices
+        }
 
         // Map common validation options
         if (options.min !== undefined) {
