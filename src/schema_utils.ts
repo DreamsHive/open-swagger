@@ -529,6 +529,16 @@ function convertVineJSProperty(prop: any, refs: any): any {
     return jsonProperty
   }
 
+  // Handle record type (dictionary/map)
+  if (prop.type === 'record' && prop.each) {
+    jsonProperty.type = 'object'
+    jsonProperty.additionalProperties = convertVineJSProperty(prop.each, refs)
+    if (prop.allowNull) {
+      jsonProperty.nullable = true
+    }
+    return jsonProperty
+  }
+
   // Map VineJS subtypes to JSON Schema types for literal types
   switch (prop.subtype) {
     case 'string':
