@@ -21,6 +21,16 @@ export const ZOD_FILE_SCHEMA_SYMBOL = Symbol.for('openswagger:zod-file')
 export const TYPEBOX_FILE_SCHEMA_SYMBOL = Symbol.for('openswagger:typebox-file')
 
 /**
+ * VineJS ConstructableSchema symbol types (type-only, no runtime dependency).
+ * Uses typeof import() so @vinejs/vine is only needed at the type level.
+ */
+type _VineSymbols = typeof import('@vinejs/vine').symbols
+declare const _VINE_ITYPE: _VineSymbols['ITYPE']
+declare const _VINE_OTYPE: _VineSymbols['OTYPE']
+declare const _VINE_COTYPE: _VineSymbols['COTYPE']
+declare const _VINE_PARSE: _VineSymbols['PARSE']
+
+/**
  * Base OpenAPI file schema interface
  */
 export interface OpenAPIFileSchema {
@@ -37,9 +47,15 @@ export interface OpenAPIFileSchema {
 }
 
 /**
- * VineJS-compatible file schema interface
+ * VineJS-compatible file schema interface.
+ * Implements the required ConstructableSchema symbols from @vinejs/vine
+ * so that vineFile() can be used inside vine.object() without TypeScript errors.
  */
 export interface VineFileSchema extends OpenAPIFileSchema {
+  [_VINE_ITYPE]: any
+  [_VINE_OTYPE]: any
+  [_VINE_COTYPE]: any
+  [_VINE_PARSE]: any
   clone(): VineFileSchema
   options: { bail: boolean; allowNull: boolean; isOptional: boolean }
   validations: any[]
@@ -65,6 +81,8 @@ export interface ZodFileSchema extends OpenAPIFileSchema {
  */
 export interface TypeBoxFileSchema extends OpenAPIFileSchema {
   [Kind]: 'String'
+  params: unknown[]
+  static: unknown
   [TYPEBOX_FILE_SCHEMA_SYMBOL]: true
 }
 
@@ -143,10 +161,17 @@ export function vineFile(options?: FileOptions): VineFileSchema {
   const baseSchema = createBaseFileSchema(options)
 
   // Create a VineJS-compatible wrapper that can be used inside vine.object()
-  const vineCompatibleSchema: VineFileSchema = {
+  const vineCompatibleSchema = {
     ...baseSchema,
     [FILE_SCHEMA_SYMBOL]: true,
     [VINE_FILE_SCHEMA_SYMBOL]: true,
+    // VineJS ConstructableSchema symbol stubs (matched via Symbol.for at runtime)
+    [Symbol.for('opaque_input_type')]: undefined,
+    [Symbol.for('opaque_type')]: undefined,
+    [Symbol.for('camelcase_opaque_type')]: undefined,
+    [Symbol.for('parse')]() {
+      return { type: 'literal' as const, fieldName: '', propertyName: '', bail: true, allowNull: false, isOptional: false, parseFnId: undefined, validations: [] }
+    },
     // VineJS requires these properties
     options: {
       bail: true,
@@ -158,7 +183,7 @@ export function vineFile(options?: FileOptions): VineFileSchema {
     clone() {
       return vineFile(options)
     },
-  } as VineFileSchema
+  } as unknown as VineFileSchema
 
   return vineCompatibleSchema
 }
@@ -191,6 +216,9 @@ export function typeboxFile(options?: FileOptions): TypeBoxFileSchema {
     [FILE_SCHEMA_SYMBOL]: true,
     [TYPEBOX_FILE_SCHEMA_SYMBOL]: true,
     [Kind]: 'String',
+    // TSchema requires these properties
+    params: [],
+    static: null,
   } as TypeBoxFileSchema
 
   return typeboxCompatibleSchema
@@ -274,6 +302,8 @@ const EXCLUDED_PROPERTIES = new Set([
   'optional', // Zod optional method
   'nullable', // Zod nullable method
   'describe', // Zod describe method
+  'params', // TypeBox TSchema params
+  'static', // TypeBox TSchema static
 ])
 
 /**
