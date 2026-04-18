@@ -1,9 +1,8 @@
 import 'reflect-metadata'
-import { getDirname } from '@adonisjs/core/helpers'
 import type Configure from '@adonisjs/core/commands/configure'
 
 // Get the stubs directory path
-const stubsRoot = getDirname(import.meta.url) + '/stubs'
+const stubsRoot = import.meta.dirname + '/stubs'
 
 /**
  * Configure command for Open Swagger package
