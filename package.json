@@ -1,8 +1,8 @@
 {
   "name": "adonis-open-swagger",
-  "version": "1.5.2",
+  "version": "1.5.4",
   "private": false,
-  "description": "Modern Swagger/OpenAPI integration for AdonisJS v6 with Scalar UI",
+  "description": "Modern Swagger/OpenAPI integration for AdonisJS v6/v7 with Scalar UI",
   "type": "module",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
@@ -114,8 +114,8 @@
     "zod": "^4.1.8"
   },
   "peerDependencies": {
-    "@adonisjs/core": "^6.2.0",
-    "@vinejs/vine": "^2.0.0 || ^3.0.0"
+    "@adonisjs/core": "^6.2.0 || ^7.0.0",
+    "@vinejs/vine": ">=2.0.0"
   },
   "peerDependenciesMeta": {
     "@sinclair/typebox": {
