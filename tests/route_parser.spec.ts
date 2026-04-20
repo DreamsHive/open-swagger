@@ -549,4 +549,149 @@ test.group('RouteParser - Array Handler Support', () => {
     // Single action controller (no method specified)
     assert.equal(extractMethodName('#controllers/single_action_controller'), 'handle')
   })
+
+  test('should handle AdonisJS v7 object handler with direct class tuple reference', async ({
+    assert,
+  }) => {
+    const { RouteParser } = await import('../src/route_parser.js')
+    const { SwaggerInfo } = await import('../src/decorators.js')
+
+    class WorkspacesController {
+      @SwaggerInfo({
+        tags: ['Workspaces'],
+        summary: 'List workspaces',
+        description: 'List user workspaces',
+      })
+      index() {
+        return []
+      }
+
+      @SwaggerInfo({
+        tags: ['Workspaces'],
+        summary: 'Create workspace',
+        description: 'Create a new workspace',
+      })
+      store() {
+        return {}
+      }
+    }
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: { title: 'Test API', version: '1.0.0' },
+      scalar: {},
+      routes: { autoScan: true },
+    }
+
+    // Exactly the shape AdonisJS v7 produces after normalizing
+    // `router.get("/workspaces", [WorkspacesController, "index"])`.
+    const mockRouter = {
+      toJSON: () => ({
+        root: [
+          {
+            pattern: '/workspaces',
+            methods: ['GET'],
+            handler: {
+              method: 'GET',
+              reference: [WorkspacesController, 'index'],
+              importExpression: '#controllers/workspaces_controller',
+              name: 'WorkspacesController.index',
+              handle: () => undefined,
+            },
+            middleware: [],
+            name: 'workspaces.index',
+          },
+          {
+            pattern: '/workspaces',
+            methods: ['POST'],
+            handler: {
+              method: 'POST',
+              reference: [WorkspacesController, 'store'],
+              importExpression: '#controllers/workspaces_controller',
+              name: 'WorkspacesController.store',
+              handle: () => undefined,
+            },
+            middleware: [],
+            name: 'workspaces.store',
+          },
+        ],
+      }),
+    }
+
+    const mockApp = {
+      container: {
+        make: async (service: string) => {
+          if (service === 'router') return mockRouter
+          throw new Error(`Service ${service} not found`)
+        },
+      },
+    }
+
+    const parser = new RouteParser(config, mockApp as any)
+    const spec = await parser.generateSpec()
+
+    assert.isObject(spec.paths)
+    assert.property(spec.paths, '/workspaces')
+    assert.property(spec.paths['/workspaces'], 'get')
+    assert.property(spec.paths['/workspaces'], 'post')
+    assert.equal(spec.paths['/workspaces'].get.summary, 'List workspaces')
+    assert.equal(spec.paths['/workspaces'].post.summary, 'Create workspace')
+    assert.deepEqual(spec.paths['/workspaces'].get.tags, ['Workspaces'])
+  })
+
+  test('should handle AdonisJS v7 object handler with lazy import tuple reference', async ({
+    assert,
+  }) => {
+    const { RouteParser } = await import('../src/route_parser.js')
+
+    const mockImportFunction = async () => ({ default: class {} })
+
+    const config = {
+      enabled: true,
+      path: '/docs',
+      info: { title: 'Test API', version: '1.0.0' },
+      scalar: {},
+      routes: { autoScan: true },
+    }
+
+    // Shape produced when user writes
+    // `router.get("/x", [() => import("#controllers/x_controller"), "show"])`.
+    const mockRouter = {
+      toJSON: () => ({
+        root: [
+          {
+            pattern: '/x',
+            methods: ['GET'],
+            handler: {
+              method: 'GET',
+              reference: [mockImportFunction, 'show'],
+              importExpression: '#controllers/x_controller',
+              name: 'XController.show',
+              handle: () => undefined,
+            },
+            middleware: [],
+            name: 'x.show',
+          },
+        ],
+      }),
+    }
+
+    const mockApp = {
+      container: {
+        make: async (service: string) => {
+          if (service === 'router') return mockRouter
+          throw new Error(`Service ${service} not found`)
+        },
+      },
+    }
+
+    const parser = new RouteParser(config, mockApp as any)
+    const spec = await parser.generateSpec()
+
+    // Paths object returns {} when the import function's default export has
+    // no decorators — but the parser must not crash and must have
+    // recognized the route at all (i.e. not throw).
+    assert.isObject(spec.paths)
+  })
 })

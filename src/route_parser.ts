@@ -177,9 +177,27 @@ export class RouteParser {
         }
       }
 
-      // Handle object handlers with lazy loading
+      // Handle object handlers with lazy loading.
+      // Reference shape varies between AdonisJS versions:
+      //   v6:  reference is a string like "#controllers/foo_controller.index"
+      //   v7:  reference is a tuple [Class | importFn, "methodName"]
+      //        (single-action controllers keep [ref] with length === 1)
       if (typeof route.handler === 'object' && route.handler.reference) {
-        return route.handler.reference
+        const ref = route.handler.reference
+        if (typeof ref === 'string') {
+          return ref
+        }
+        // v7 prefers `handler.name` ("ClassName.methodName") for display.
+        if (typeof route.handler.name === 'string' && route.handler.name) {
+          return route.handler.name
+        }
+        if (Array.isArray(ref)) {
+          const [first, maybeMethod] = ref
+          const firstName = (first && first.name) || 'Controller'
+          return typeof maybeMethod === 'string'
+            ? `${firstName}.${maybeMethod}`
+            : `${firstName}.handle`
+        }
       }
 
       // Handle function handlers
@@ -230,12 +248,26 @@ export class RouteParser {
         }
       }
 
-      // Handle object handlers for AdonisJS v6 lazy-loaded controllers
-      // Structure: { reference: '#controllers/users_controller.index', name: '...', handle: Function }
+      // Handle normalized object handlers emitted by the router.
+      //
+      // AdonisJS v6 shape:
+      //   { reference: "#controllers/users_controller.index", name: ..., handle: fn }
+      //
+      // AdonisJS v7 shape (after `router.get("/", [Controller, "method"])` or
+      // `[() => import(...), "method"]` gets normalized):
+      //   {
+      //     method: ...,
+      //     reference: [Class | importFn, "methodName"],
+      //     importExpression: ...,
+      //     name: "ClassName.methodName",
+      //     handle: fn,
+      //   }
+      //
+      // Single-action controllers keep `reference: [ref]` with length 1.
       if (typeof route.handler === 'object' && route.handler.reference && route.handler.handle) {
         const reference = route.handler.reference
 
-        // Reference is a string like '#controllers/users_controller.index'
+        // v6 string reference.
         if (typeof reference === 'string') {
           return {
             handler: reference,
@@ -243,12 +275,33 @@ export class RouteParser {
           }
         }
 
-        // Reference is an array like [importFunction] (single action controller)
         if (Array.isArray(reference) && reference.length > 0) {
-          const [controllerModule] = reference
+          const first = reference[0]
+          const maybeMethod = reference[1]
+
+          // v7 two-element tuple: [Class | importFn, "methodName"].
+          if (typeof maybeMethod === 'string' && typeof first === 'function') {
+            // Direct class reference: [Controller, "method"].
+            if (first.prototype && first.prototype.constructor === first) {
+              return {
+                handler: `Array[${first.name || 'Controller'}, ${maybeMethod}]`,
+                controllerClass: first,
+                methodName: maybeMethod,
+              }
+            }
+            // Lazy import function: [() => import("..."), "method"].
+            return {
+              handler: `Array[${first.name || 'ImportFunction'}, ${maybeMethod}]`,
+              importFunction: first as () => Promise<any>,
+              methodName: maybeMethod,
+            }
+          }
+
+          // Single-action controller: reference is [ref] with length 1 —
+          // the method name is always "handle" by convention.
           return {
-            handler: `Array[${controllerModule?.name || 'Controller'}, handle]`,
-            importFunction: controllerModule,
+            handler: `Array[${first?.name || 'Controller'}, handle]`,
+            importFunction: first,
             methodName: 'handle',
           }
         }
